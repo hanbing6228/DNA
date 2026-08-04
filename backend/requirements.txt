@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+pysam
+pandas
+requests
