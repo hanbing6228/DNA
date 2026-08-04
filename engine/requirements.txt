@@ -1,0 +1,7 @@
+# DNA Personal Genome Analyzer
+# No external dependencies required for core engine!
+# Standard library only: gzip, json, re, argparse, pathlib
+
+# Optional: for advanced features
+# pandas>=2.0
+# numpy>=1.24
