@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DNA Genome Intelligence v2</title>
+<title>DNA Genome Intelligence v3.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0b1120;color:#e2e8f0;line-height:1.6}
@@ -30,93 +30,85 @@ textarea{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8p
 .hint{font-size:12px;color:#64748b;margin-top:6px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:600px){.row{grid-template-columns:1fr}}
-
-/* Loading spinner */
 .spinner{display:none;width:20px;height:20px;border:3px solid rgba(255,255,255,.3);border-radius:50%;border-top-color:#fff;animation:spin 1s ease-in-out infinite;margin-right:10px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btn.loading .spinner{display:inline-block}
 .btn.loading{color:transparent}
-
-/* Progress bar */
 .progress-container{display:none;margin-top:12px;background:#0f172a;border-radius:8px;height:8px;overflow:hidden}
 .progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:8px;transition:width .3s}
-
-/* Tag pills */
-.tag{display:inline-flex;align-items:center;gap:6px;background:#1e293b;padding:4px 12px;border-radius:20px;font-size:12px;margin:4px 4px 0 0}
-.tag .remove{cursor:pointer;color:#64748b;font-weight:700}
-.tag .remove:hover{color:#ef4444}
+.nav{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.nav a{color:#94a3b8;text-decoration:none;font-size:13px;padding:6px 12px;background:#1e293b;border-radius:8px}
+.nav a:hover{color:#60a5fa}
 </style>
 </head>
 <body>
 <div class="container">
-<h1>DNA Genome Intelligence v2.1</h1>
-<p class="subtitle">知识图谱驱动 · 规则推理引擎 · 个人健康智能</p>
+<h1>DNA Genome Intelligence v3.0</h1>
+<p class="subtitle">Knowledge Graph · Reasoning Engine · Longitudinal Memory · Family Graph</p>
+
+<div class="nav">
+  <a href="#analyze">Analyze</a>
+  <a href="#timeline">Timeline</a>
+  <a href="#family">Family</a>
+  <a href="#alerts">Alerts</a>
+</div>
 
 <form id="uploadForm" enctype="multipart/form-data">
 
-<!-- VCF -->
-<div class="card">
-<div class="card-title">📄 VCF 基因文件 <span class="required">*</span></div>
+<div class="card" id="analyze">
+<div class="card-title">VCF File <span class="required">*</span></div>
 <div class="dropzone" id="vcfZone">
 <input type="file" name="vcf" accept=".vcf,.vcf.gz" id="vcfInput">
-<div class="dz-text">📁 点击或拖拽上传 .vcf / .vcf.gz</div>
+<div class="dz-text">Click or drag to upload .vcf / .vcf.gz</div>
 <div class="file-name" id="vcfName"></div>
 </div>
 </div>
 
-<!-- Profile -->
 <div class="card">
-<div class="card-title">👤 个人健康档案 <span class="optional">可选</span></div>
+<div class="card-title">Health Profile <span class="optional">Optional</span></div>
 <div class="dropzone" id="profileZone">
 <input type="file" name="profile" accept=".json" id="profileInput">
-<div class="dz-text">📁 上传 profile.json</div>
+<div class="dz-text">Upload profile.json</div>
 <div class="file-name" id="profileName"></div>
 </div>
-<p class="hint">或直接粘贴 JSON（症状、病史、家族史）：</p>
+<p class="hint">Or paste JSON directly:</p>
 <textarea name="profile_json" rows="5" id="profileJson" placeholder='{
   "basic": {"age": 38, "sex": "female"},
   "conditions": ["anxiety", "insomnia"],
   "medications": ["bupropion"],
   "family_history": [
-    {"condition": "pancreatitis", "relation": "father"},
-    {"condition": "breast cancer", "relation": "mother"}
-  ],
-  "lab_results": {"LDL": {"value": 140, "unit": "mg/dL"}}
+    {"condition": "pancreatitis", "relation": "father"}
+  ]
 }'></textarea>
 </div>
 
-<!-- Apple Health -->
 <div class="card">
-<div class="card-title">🍎 Apple Health 导出 <span class="optional">可选</span></div>
+<div class="card-title">Apple Health Export <span class="optional">Optional</span></div>
 <div class="dropzone" id="healthZone">
 <input type="file" name="health" accept=".xml" id="healthInput">
-<div class="dz-text">📁 上传 export.xml（iPhone 健康 App 导出）</div>
+<div class="dz-text">Upload export.xml (iPhone Health App)</div>
 <div class="file-name" id="healthName"></div>
 </div>
-<p class="hint">将在报告中显示关键健康指标趋势</p>
 </div>
 
-<!-- Hospital Reports -->
 <div class="card">
-<div class="card-title">🏥 医院检验报告 <span class="optional">可选</span></div>
+<div class="card-title">Hospital Reports <span class="optional">Optional</span></div>
 <div class="dropzone" id="reportZone">
 <input type="file" name="reports" accept=".pdf,.png,.jpg,.jpeg,.txt,.csv" multiple id="reportInput">
-<div class="dz-text">📁 上传 PDF / 图片 / 文本（可多选）</div>
+<div class="dz-text">Upload PDF / images / text (multiple)</div>
 <div class="file-name" id="reportName"></div>
 </div>
-<p class="hint">血常规、生化、影像报告等，用于横向对比基因风险</p>
 </div>
 
-<!-- Params -->
 <div class="card">
-<div class="card-title">⚙️ 分析参数</div>
+<div class="card-title">Analysis Parameters</div>
 <div class="row">
 <div>
-<label style="font-size:13px;color:#94a3b8">最大变异数</label>
+<label style="font-size:13px;color:#94a3b8">Max Variants</label>
 <input type="number" name="max_variants" value="50000" style="width:100%;margin-top:6px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0">
 </div>
 <div>
-<label style="font-size:13px;color:#94a3b8">最低评分（0=显示全部）</label>
+<label style="font-size:13px;color:#94a3b8">Min Score (0=show all)</label>
 <input type="number" name="min_score" value="0" style="width:100%;margin-top:6px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0">
 </div>
 </div>
@@ -124,7 +116,7 @@ textarea{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8p
 
 <button type="submit" class="btn" id="submitBtn">
 <span class="spinner"></span>
-<span class="btn-text">开始分析</span>
+<span class="btn-text">Start Analysis</span>
 </button>
 
 <div class="progress-container" id="progressContainer">
@@ -134,10 +126,19 @@ textarea{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8p
 <div id="status" class="status"></div>
 
 </form>
+
+<!-- v3.0: Quick Links -->
+<div class="card" style="margin-top:24px">
+<div class="card-title">Quick Access</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<a href="/reports/report_v3.html" target="_blank" style="padding:8px 16px;background:#1e293b;border-radius:8px;color:#60a5fa;text-decoration:none;font-size:13px">Latest Report</a>
+<a href="/api/report" target="_blank" style="padding:8px 16px;background:#1e293b;border-radius:8px;color:#60a5fa;text-decoration:none;font-size:13px">JSON Data</a>
+</div>
+</div>
+
 </div>
 
 <script>
-// Drag & drop + file picker
 function setupDropzone(zoneId, inputId, nameId) {
   var zone = document.getElementById(zoneId);
   var input = document.getElementById(inputId);
@@ -163,7 +164,6 @@ setupDropzone('profileZone', 'profileInput', 'profileName');
 setupDropzone('healthZone', 'healthInput', 'healthName');
 setupDropzone('reportZone', 'reportInput', 'reportName');
 
-// Submit with progress
 var form = document.getElementById('uploadForm');
 var btn = document.getElementById('submitBtn');
 var status = document.getElementById('status');
@@ -174,15 +174,15 @@ form.onsubmit = function(e) {
   e.preventDefault();
   if (!document.getElementById('vcfInput').files.length) {
     status.className = 'status error';
-    status.textContent = '请先选择 VCF 文件';
+    status.textContent = 'Please select a VCF file';
     return;
   }
 
   btn.disabled = true;
   btn.classList.add('loading');
-  document.querySelector('.btn-text').textContent = '解析 VCF 中...';
+  document.querySelector('.btn-text').textContent = 'Parsing VCF...';
   status.className = 'status info';
-  status.textContent = '正在解析 VCF 文件，查询 ClinVar 知识图谱...';
+  status.textContent = 'Analyzing VCF, querying ClinVar knowledge graph...';
   progressContainer.style.display = 'block';
   progressBar.style.width = '10%';
 
@@ -193,7 +193,7 @@ form.onsubmit = function(e) {
     if (e.lengthComputable) {
       var pct = Math.round((e.loaded / e.total) * 40) + 10;
       progressBar.style.width = pct + '%';
-      document.querySelector('.btn-text').textContent = '上传中 ' + pct + '%';
+      document.querySelector('.btn-text').textContent = 'Uploading ' + pct + '%';
     }
   });
 
@@ -207,17 +207,17 @@ form.onsubmit = function(e) {
         var data = JSON.parse(xhr.responseText);
         if (data.success) {
           status.className = 'status success';
-          status.innerHTML = '🎉 分析完成！发现 <strong>' + data.reported + '</strong> 条相关变异。<br>正在打开报告...';
+          status.innerHTML = 'Analysis complete! Found <strong>' + data.reported + '</strong> relevant variants.<br>Opening report...';
           setTimeout(function(){window.open(data.redirect, '_blank');}, 600);
         } else {
           status.className = 'status error';
-          status.textContent = data.error || '分析失败';
-          document.querySelector('.btn-text').textContent = '开始分析';
+          status.textContent = data.error || 'Analysis failed';
+          document.querySelector('.btn-text').textContent = 'Start Analysis';
         }
       } catch(err) {
         status.className = 'status error';
-        status.textContent = '服务器错误: ' + xhr.status;
-        document.querySelector('.btn-text').textContent = '开始分析';
+        status.textContent = 'Server error: ' + xhr.status;
+        document.querySelector('.btn-text').textContent = 'Start Analysis';
       }
     }
   };
@@ -226,8 +226,8 @@ form.onsubmit = function(e) {
     btn.disabled = false;
     btn.classList.remove('loading');
     status.className = 'status error';
-    status.textContent = '网络错误，请重试';
-    document.querySelector('.btn-text').textContent = '开始分析';
+    status.textContent = 'Network error, please retry';
+    document.querySelector('.btn-text').textContent = 'Start Analysis';
   };
 
   xhr.open('POST', '/api/analyze');
