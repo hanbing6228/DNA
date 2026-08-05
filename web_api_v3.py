@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-DNA Personal Genome Intelligence v2.1
+DNA Personal Genome Intelligence v3.0
 - Knowledge Graph + Reasoning Engine
+- Longitudinal Genome Memory
+- Health Timeline
+- Family Graph
 - Apple Health XML parsing
-- Hospital report storage
-- Enhanced drug database (CPIC/PharmGKB common pairs)
-- Phenotype matching display
+- Enhanced drug database (CPIC/PharmGKB)
 """
 import json, sys, gzip, re, xml.etree.ElementTree as ET
 from pathlib import Path
@@ -19,6 +20,9 @@ sys.path.insert(0, str(BASE))
 from database.db import init_db, UserGenotypeRepository, get_conn
 from engine.knowledge_service import KnowledgeService
 from engine.reasoning_engine import ReasoningEngine
+from engine.longitudinal_memory import LongitudinalMemory, GenomeMemoryEngine
+from engine.health_timeline import HealthTimeline
+from engine.family_graph import FamilyGraph
 
 app = Flask(__name__, template_folder=str(BASE / "templates"))
 UPLOAD = BASE / "uploads"
@@ -30,88 +34,107 @@ app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024
 init_db()
 
 # ============================================================
-# Drug Database (CPIC / PharmGKB common pairs)
+# v3.0: Apply schema_v3 additions
+# ============================================================
+def _apply_v3_schema():
+    schema_v3 = BASE / "database" / "schema_v3.sql"
+    if schema_v3.exists():
+        import sqlite3
+        db_path = BASE / "database" / "dna_knowledge.db"
+        conn = sqlite3.connect(db_path)
+        conn.executescript(schema_v3.read_text())
+        conn.close()
+
+_apply_v3_schema()
+
+# ============================================================
+# Drug Database (CPIC / PharmGKB)
 # ============================================================
 DRUG_DB = {
     'MTHFR': {
         'drugs': [
-            {'drug': 'Methotrexate', 'effect': '可能增加毒性风险', 'recommendation': '考虑降低剂量或监测血药浓度', 'source': 'CPIC'},
-            {'drug': '5-Fluorouracil (5-FU)', 'effect': '可能增加毒性', 'recommendation': '谨慎使用，密切监测', 'source': 'CPIC'},
-            {'drug': 'Folic acid supplements', 'effect': '可能需要补充', 'recommendation': '咨询医生是否需要活性叶酸', 'source': 'PharmGKB'},
+            {'drug': 'Methotrexate', 'effect': 'Toxicity risk increased', 'recommendation': 'Consider dose reduction or monitor blood levels', 'source': 'CPIC'},
+            {'drug': '5-Fluorouracil (5-FU)', 'effect': 'Increased toxicity', 'recommendation': 'Use with caution, close monitoring', 'source': 'CPIC'},
+            {'drug': 'Folic acid supplements', 'effect': 'May need supplementation', 'recommendation': 'Consult doctor about active folate', 'source': 'PharmGKB'},
         ],
-        'description': 'MTHFR 基因编码亚甲基四氢叶酸还原酶，影响叶酸代谢和多种药物反应。'
+        'description': 'MTHFR encodes methylenetetrahydrofolate reductase, affecting folate metabolism and drug response.'
     },
     'DPYD': {
         'drugs': [
-            {'drug': '5-Fluorouracil (5-FU)', 'effect': '严重毒性风险', 'recommendation': '禁忌或大幅减量，必须基因检测', 'source': 'CPIC'},
-            {'drug': 'Capecitabine', 'effect': '严重毒性风险', 'recommendation': '禁忌或大幅减量', 'source': 'CPIC'},
-            {'drug': 'Tegafur', 'effect': '毒性风险增加', 'recommendation': '避免使用', 'source': 'CPIC'},
+            {'drug': '5-Fluorouracil (5-FU)', 'effect': 'Severe toxicity risk', 'recommendation': 'Contraindicated or major dose reduction, genetic testing required', 'source': 'CPIC'},
+            {'drug': 'Capecitabine', 'effect': 'Severe toxicity risk', 'recommendation': 'Contraindicated or major dose reduction', 'source': 'CPIC'},
+            {'drug': 'Tegafur', 'effect': 'Toxicity risk increased', 'recommendation': 'Avoid use', 'source': 'CPIC'},
         ],
-        'description': 'DPYD 基因编码二氢嘧啶脱氢酶，是氟尿嘧啶类药物代谢的关键酶。'
+        'description': 'DPYD encodes dihydropyrimidine dehydrogenase, the key enzyme for fluoropyrimidine metabolism.'
     },
     'CYP2D6': {
         'drugs': [
-            {'drug': 'Codeine', 'effect': '可能无效或超快代谢', 'recommendation': '避免使用，换用其他镇痛药', 'source': 'CPIC'},
-            {'drug': 'Tamoxifen', 'effect': '疗效可能降低', 'recommendation': '考虑替代内分泌治疗', 'source': 'CPIC'},
-            {'drug': 'Tramadol', 'effect': '代谢变异', 'recommendation': '监测疗效，必要时调整', 'source': 'PharmGKB'},
+            {'drug': 'Codeine', 'effect': 'May be ineffective or ultra-rapid metabolized', 'recommendation': 'Avoid, switch to alternative analgesic', 'source': 'CPIC'},
+            {'drug': 'Tamoxifen', 'effect': 'Efficacy may be reduced', 'recommendation': 'Consider alternative endocrine therapy', 'source': 'CPIC'},
+            {'drug': 'Tramadol', 'effect': 'Metabolism variation', 'recommendation': 'Monitor efficacy, adjust if needed', 'source': 'PharmGKB'},
         ],
-        'description': 'CYP2D6 是重要的药物代谢酶，影响多种药物的血药浓度。'
+        'description': 'CYP2D6 is a major drug-metabolizing enzyme affecting plasma concentrations of many drugs.'
     },
     'CYP2C19': {
         'drugs': [
-            {'drug': 'Clopidogrel (Plavix)', 'effect': '可能抗血小板效果不足', 'recommendation': '考虑换用替格瑞洛或普拉格雷', 'source': 'CPIC'},
-            {'drug': 'Omeprazole', 'effect': '疗效可能增强', 'recommendation': '标准剂量通常安全', 'source': 'PharmGKB'},
-            {'drug': 'Diazepam', 'effect': '代谢减慢', 'recommendation': '考虑减量', 'source': 'PharmGKB'},
+            {'drug': 'Clopidogrel (Plavix)', 'effect': 'Antiplatelet effect may be insufficient', 'recommendation': 'Consider switching to ticagrelor or prasugrel', 'source': 'CPIC'},
+            {'drug': 'Omeprazole', 'effect': 'Efficacy may be enhanced', 'recommendation': 'Standard dose usually safe', 'source': 'PharmGKB'},
+            {'drug': 'Diazepam', 'effect': 'Slower metabolism', 'recommendation': 'Consider dose reduction', 'source': 'PharmGKB'},
         ],
-        'description': 'CYP2C19 影响氯吡格雷等药物的代谢，与心血管治疗密切相关。'
+        'description': 'CYP2C19 affects clopidogrel metabolism and is closely related to cardiovascular therapy.'
     },
     'CYP2C9': {
         'drugs': [
-            {'drug': 'Warfarin', 'effect': '出血风险增加', 'recommendation': '降低起始剂量，密切监测 INR', 'source': 'CPIC'},
-            {'drug': 'Phenytoin', 'effect': '毒性风险', 'recommendation': '起始剂量减半', 'source': 'CPIC'},
-            {'drug': 'Celecoxib', 'effect': '暴露量增加', 'recommendation': '最低有效剂量', 'source': 'PharmGKB'},
+            {'drug': 'Warfarin', 'effect': 'Bleeding risk increased', 'recommendation': 'Reduce starting dose, closely monitor INR', 'source': 'CPIC'},
+            {'drug': 'Phenytoin', 'effect': 'Toxicity risk', 'recommendation': 'Halve starting dose', 'source': 'CPIC'},
+            {'drug': 'Celecoxib', 'effect': 'Increased exposure', 'recommendation': 'Lowest effective dose', 'source': 'PharmGKB'},
         ],
-        'description': 'CYP2C9 参与华法林等药物的代谢，变异显著影响抗凝治疗。'
+        'description': 'CYP2C9 participates in warfarin metabolism; variants significantly affect anticoagulation therapy.'
     },
     'VKORC1': {
         'drugs': [
-            {'drug': 'Warfarin', 'effect': '华法林敏感性增加', 'recommendation': '显著降低起始剂量', 'source': 'CPIC'},
+            {'drug': 'Warfarin', 'effect': 'Increased warfarin sensitivity', 'recommendation': 'Significantly reduce starting dose', 'source': 'CPIC'},
         ],
-        'description': 'VKORC1 是华法林的作用靶点，变异影响抗凝敏感性。'
+        'description': 'VKORC1 is the warfarin target; variants affect anticoagulation sensitivity.'
     },
     'SLCO1B1': {
         'drugs': [
-            {'drug': 'Simvastatin', 'effect': '肌病风险增加', 'recommendation': '考虑低剂量或换用其他他汀', 'source': 'CPIC'},
-            {'drug': 'Atorvastatin', 'effect': '轻度风险增加', 'recommendation': '监测肌酸激酶', 'source': 'PharmGKB'},
+            {'drug': 'Simvastatin', 'effect': 'Myopathy risk increased', 'recommendation': 'Consider low dose or switch statin', 'source': 'CPIC'},
+            {'drug': 'Atorvastatin', 'effect': 'Mild risk increase', 'recommendation': 'Monitor creatine kinase', 'source': 'PharmGKB'},
         ],
-        'description': 'SLCO1B1 影响他汀类药物的肝脏摄取，与肌病风险相关。'
+        'description': 'SLCO1B1 affects hepatic uptake of statins and is associated with myopathy risk.'
     },
     'TPMT': {
         'drugs': [
-            {'drug': 'Azathioprine', 'effect': '严重骨髓抑制风险', 'recommendation': '大幅减量或避免使用', 'source': 'CPIC'},
-            {'drug': '6-Mercaptopurine', 'effect': '严重骨髓抑制风险', 'recommendation': '大幅减量', 'source': 'CPIC'},
-            {'drug': 'Thioguanine', 'effect': '毒性风险', 'recommendation': '大幅减量', 'source': 'CPIC'},
+            {'drug': 'Azathioprine', 'effect': 'Severe myelosuppression risk', 'recommendation': 'Major dose reduction or avoid', 'source': 'CPIC'},
+            {'drug': '6-Mercaptopurine', 'effect': 'Severe myelosuppression risk', 'recommendation': 'Major dose reduction', 'source': 'CPIC'},
+            {'drug': 'Thioguanine', 'effect': 'Toxicity risk', 'recommendation': 'Major dose reduction', 'source': 'CPIC'},
         ],
-        'description': 'TPMT 缺乏会导致硫嘌呤类药物的严重毒性，用药前必须检测。'
+        'description': 'TPMT deficiency causes severe thiopurine toxicity; testing required before use.'
     },
     'HLA-B': {
         'drugs': [
-            {'drug': 'Carbamazepine', 'effect': 'Stevens-Johnson 综合征风险', 'recommendation': 'HLA-B*15:02 阳性者禁用', 'source': 'CPIC'},
-            {'drug': 'Allopurinol', 'effect': '严重皮肤反应风险', 'recommendation': 'HLA-B*58:01 阳性者慎用', 'source': 'CPIC'},
+            {'drug': 'Carbamazepine', 'effect': 'Stevens-Johnson syndrome risk', 'recommendation': 'Contraindicated if HLA-B*15:02 positive', 'source': 'CPIC'},
+            {'drug': 'Allopurinol', 'effect': 'Severe skin reaction risk', 'recommendation': 'Use with caution if HLA-B*58:01 positive', 'source': 'CPIC'},
         ],
-        'description': 'HLA-B 等位基因与多种药物的严重皮肤不良反应相关。'
+        'description': 'HLA-B alleles are associated with severe cutaneous adverse drug reactions.'
     },
     'CFTR': {
         'drugs': [
-            {'drug': 'Ivacaftor', 'effect': '针对特定突变有效', 'recommendation': '需确认具体突变类型', 'source': 'FDA'},
+            {'drug': 'Ivacaftor', 'effect': 'Effective for specific mutations', 'recommendation': 'Confirm specific mutation type', 'source': 'FDA'},
         ],
-        'description': 'CFTR 突变影响囊性纤维化治疗药物的响应。'
+        'description': 'CFTR mutations affect response to cystic fibrosis therapeutics.'
+    },
+    'PRSS1': {
+        'drugs': [
+            {'drug': 'Alcohol', 'effect': 'Triggers acute pancreatitis attacks', 'recommendation': 'Strict abstinence from alcohol', 'source': 'Clinical Guideline'},
+        ],
+        'description': 'PRSS1 pathogenic variants cause hereditary pancreatitis; lifestyle modification critical.'
     },
 }
 
 
 def get_drug_guidance(gene_symbol: str) -> dict:
-    """Get drug guidance for a gene from built-in database."""
     return DRUG_DB.get(gene_symbol.upper(), None)
 
 
@@ -119,11 +142,9 @@ def get_drug_guidance(gene_symbol: str) -> dict:
 # Apple Health XML Parser
 # ============================================================
 def parse_apple_health(xml_path: Path) -> dict:
-    """Parse Apple Health export.xml and extract key metrics."""
     try:
         tree = ET.parse(xml_path)
         root = tree.getroot()
-
         records = []
         for record in root.findall('.//Record'):
             rtype = record.get('type', '')
@@ -137,20 +158,19 @@ def parse_apple_health(xml_path: Path) -> dict:
                 except ValueError:
                     pass
 
-        # Extract latest values for key metrics
         key_types = {
-            'HKQuantityTypeIdentifierHeartRate': '静息心率',
-            'HKQuantityTypeIdentifierBloodPressureSystolic': '收缩压',
-            'HKQuantityTypeIdentifierBloodPressureDiastolic': '舒张压',
-            'HKQuantityTypeIdentifierBloodGlucose': '血糖',
+            'HKQuantityTypeIdentifierHeartRate': 'Resting Heart Rate',
+            'HKQuantityTypeIdentifierBloodPressureSystolic': 'Systolic BP',
+            'HKQuantityTypeIdentifierBloodPressureDiastolic': 'Diastolic BP',
+            'HKQuantityTypeIdentifierBloodGlucose': 'Blood Glucose',
             'HKQuantityTypeIdentifierBodyMassIndex': 'BMI',
-            'HKQuantityTypeIdentifierBodyFatPercentage': '体脂率',
-            'HKQuantityTypeIdentifierOxygenSaturation': '血氧饱和度',
-            'HKQuantityTypeIdentifierStepCount': '步数',
-            'HKQuantityTypeIdentifierDistanceWalkingRunning': '步行距离',
-            'HKQuantityTypeIdentifierActiveEnergyBurned': '活动能量',
-            'HKQuantityTypeIdentifierBasalEnergyBurned': '基础代谢',
-            'HKQuantityTypeIdentifierSleepAnalysis': '睡眠',
+            'HKQuantityTypeIdentifierBodyFatPercentage': 'Body Fat %',
+            'HKQuantityTypeIdentifierOxygenSaturation': 'SpO2',
+            'HKQuantityTypeIdentifierStepCount': 'Steps',
+            'HKQuantityTypeIdentifierDistanceWalkingRunning': 'Walking Distance',
+            'HKQuantityTypeIdentifierActiveEnergyBurned': 'Active Energy',
+            'HKQuantityTypeIdentifierBasalEnergyBurned': 'Basal Metabolic Rate',
+            'HKQuantityTypeIdentifierSleepAnalysis': 'Sleep',
         }
 
         latest = {}
@@ -160,19 +180,14 @@ def parse_apple_health(xml_path: Path) -> dict:
             if name not in latest or (r['date'] and r['date'] > latest[name]['date']):
                 latest[name] = r
 
-        # Calculate averages for trend metrics
         trends = {}
         for name, r in latest.items():
-            trends[name] = {
-                'value': r['value'],
-                'unit': r['unit'],
-                'date': r['date']
-            }
+            trends[name] = {'value': r['value'], 'unit': r['unit'], 'date': r['date']}
 
         return {
             'record_count': len(records),
             'latest_metrics': trends,
-            'summary': f"解析了 {len(records)} 条健康记录，提取了 {len(trends)} 项关键指标。"
+            'summary': f"Parsed {len(records)} health records, extracted {len(trends)} key metrics."
         }
     except Exception as e:
         return {'error': str(e), 'record_count': 0}
@@ -225,7 +240,7 @@ def index():
 def analyze_api():
     vcf = request.files.get("vcf")
     if not vcf or vcf.filename == "":
-        return jsonify({"error": "请上传VCF文件"}), 400
+        return jsonify({"error": "Please upload a VCF file"}), 400
 
     vcf_path = UPLOAD / secure_filename(vcf.filename)
     vcf.save(vcf_path)
@@ -279,13 +294,11 @@ def analyze_api():
 
         finding = ReasoningEngine.analyze(kg_variant, v['genotype'], profile)
 
-        # Enhanced drug guidance from built-in database
         gene = finding.get('gene_symbol', '')
         if gene:
             drug_info = get_drug_guidance(gene)
             if drug_info:
                 finding['drug_database'] = drug_info
-                # Merge with existing drug_guidance
                 if 'drug_guidance' not in finding or not finding['drug_guidance']:
                     finding['drug_guidance'] = drug_info
 
@@ -298,6 +311,15 @@ def analyze_api():
     order = {'clinical_action': 0, 'pharmacogenomics': 1, 'disease_risk': 2, 'carrier_status': 3}
     findings.sort(key=lambda x: (order.get(x.get('category', ''), 99), -x['score']['total_score']))
 
+    # v3.0: Build health timeline
+    HealthTimeline.auto_build_from_analysis(sample_name, findings, profile, health_data, hospital_files)
+
+    # v3.0: Calculate family risks
+    family_risks = FamilyGraph.calculate_family_risks(sample_name, findings)
+
+    # v3.0: Check for longitudinal alerts
+    alert_count = GenomeMemoryEngine.process_clinvar_update(sample_name, snapshot_id=1)
+
     results = {
         "total_vcf_variants": total,
         "reported": len(findings),
@@ -305,38 +327,136 @@ def analyze_api():
         "profile": profile,
         "health_data": health_data,
         "hospital_files": hospital_files,
+        "family_risks": family_risks,
+        "new_alerts": alert_count,
         "timestamp": datetime.now().isoformat(),
     }
 
     # Save reports
-    json_path = REPORT / "report_v2.json"
+    json_path = REPORT / "report_v3.json"
     json.dump(results, open(json_path, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
 
-    html_path = REPORT / "report_v2.html"
+    html_path = REPORT / "report_v3.html"
     html_path.write_text(generate_html_report(results), encoding='utf-8')
 
-    return jsonify({"success": True, "reported": len(findings), "redirect": "/reports/report_v2.html"})
+    return jsonify({"success": True, "reported": len(findings), "redirect": "/reports/report_v3.html"})
 
 
 # ============================================================
-# HTML Report Generator
+# v3.0 API: Longitudinal Memory
+# ============================================================
+@app.route("/api/alerts/<sample_name>")
+def get_alerts(sample_name):
+    unread_only = request.args.get('unread', 'false').lower() == 'true'
+    alerts = LongitudinalMemory.get_alerts(sample_name, unread_only)
+    return jsonify({"alerts": alerts, "count": len(alerts)})
+
+@app.route("/api/alerts/<int:alert_id>/read", methods=["POST"])
+def mark_alert_read(alert_id):
+    LongitudinalMemory.mark_alert_read(alert_id)
+    return jsonify({"success": True})
+
+@app.route("/api/variant_history/<sample_name>")
+def variant_history(sample_name):
+    with get_conn() as conn:
+        rows = conn.execute("""
+            SELECT vh.*, v.chromosome, v.position, g.symbol as gene_symbol
+            FROM variant_history vh
+            JOIN variants v ON vh.variant_id = v.id
+            LEFT JOIN genes g ON v.gene_id = g.id
+            JOIN user_genotypes ug ON v.id = ug.variant_id
+            WHERE ug.sample_name = ?
+            ORDER BY vh.changed_at DESC
+        """, (sample_name,)).fetchall()
+        return jsonify({"history": [dict(r) for r in rows]})
+
+
+# ============================================================
+# v3.0 API: Health Timeline
+# ============================================================
+@app.route("/api/timeline/<sample_name>")
+def get_timeline(sample_name):
+    event_types = request.args.get('types', '').split(',') if request.args.get('types') else None
+    start = request.args.get('start')
+    end = request.args.get('end')
+    events = HealthTimeline.get_timeline(sample_name, event_types, start, end)
+    return jsonify({"events": events, "count": len(events)})
+
+@app.route("/api/timeline/<sample_name>/risk")
+def get_risk_timeline(sample_name):
+    gene = request.args.get('gene')
+    events = HealthTimeline.get_risk_timeline(sample_name, gene)
+    return jsonify({"events": events})
+
+
+# ============================================================
+# v3.0 API: Family Graph
+# ============================================================
+@app.route("/api/family/<proband_sample>")
+def get_family(proband_sample):
+    family = FamilyGraph.get_family(proband_sample)
+    risks = FamilyGraph.get_family_risks(proband_sample)
+    pedigree = FamilyGraph.get_pedigree_data(proband_sample)
+    return jsonify({
+        "family": family,
+        "risks": risks,
+        "pedigree": pedigree
+    })
+
+@app.route("/api/family/<proband_sample>/member", methods=["POST"])
+def add_family_member(proband_sample):
+    data = request.json or {}
+    member_id = FamilyGraph.add_member(
+        proband_sample=proband_sample,
+        relation=data.get('relation'),
+        name=data.get('name'),
+        sex=data.get('sex'),
+        affected=data.get('affected', False),
+        conditions=data.get('conditions', []),
+        has_genome=data.get('has_genome', False),
+        sample_name=data.get('sample_name')
+    )
+    return jsonify({"success": True, "member_id": member_id})
+
+@app.route("/api/family/<proband_sample>/calculate", methods=["POST"])
+def calculate_family_risks(proband_sample):
+    findings = request.json.get('findings', [])
+    risks = FamilyGraph.calculate_family_risks(proband_sample, findings)
+    return jsonify({"risks": risks, "count": len(risks)})
+
+
+# ============================================================
+# v3.0 API: Medication Check
+# ============================================================
+@app.route("/api/medication/check/<sample_name>", methods=["POST"])
+def check_medication(sample_name):
+    data = request.json or {}
+    drug_name = data.get('drug_name', '')
+    conflicts = GenomeMemoryEngine.check_medication_conflicts(sample_name, drug_name)
+    return jsonify({"drug": drug_name, "conflicts": conflicts, "has_conflict": len(conflicts) > 0})
+
+
+# ============================================================
+# HTML Report Generator v3.0
 # ============================================================
 def generate_html_report(data: dict) -> str:
     findings = data.get('findings', [])
     profile = data.get('profile')
     health = data.get('health_data')
     hospitals = data.get('hospital_files', [])
+    family_risks = data.get('family_risks', [])
+    alerts = data.get('new_alerts', 0)
 
     # Category counts
     cats = {}
     for f in findings:
-        c = f.get('category_cn', '其他')
+        c = f.get('category_cn', 'Other')
         cats[c] = cats.get(c, 0) + 1
 
     # Build finding cards
     cards_html = []
     for f in findings:
-        gene = f.get('gene_symbol', '未知')
+        gene = f.get('gene_symbol', 'Unknown')
         score = f['score']['total_score']
         urgency_color = {'high': '#ef4444', 'medium': '#f97316', 'low': '#eab308', 'none': '#64748b'}
         color = urgency_color.get(f.get('urgency', 'none'), '#64748b')
@@ -349,7 +469,7 @@ def generate_html_report(data: dict) -> str:
             pc = f['personal_context']
             factors = ''.join('<li style="margin:4px 0">%s</li>' % m for m in pc.get('matched_factors', []))
             personal_block = '<div style="margin-top:12px;padding:12px;background:#1e293b;border-radius:8px;border-left:3px solid #60a5fa">'
-            personal_block += '<strong style="color:#60a5fa">👤 个人化评估</strong>'
+            personal_block += '<strong style="color:#60a5fa">Personalized Assessment</strong>'
             personal_block += '<p style="margin-top:6px;color:#94a3b8;font-size:13px">%s</p>' % pc['assessment']
             personal_block += '<ul style="color:#94a3b8;font-size:12px;margin-top:6px;padding-left:18px">%s</ul>' % factors
             personal_block += '</div>'
@@ -363,12 +483,12 @@ def generate_html_report(data: dict) -> str:
                 '<div style="font-weight:600;color:#e2e8f0;font-size:13px">%s</div>'
                 '<div style="color:#f87171;font-size:12px;margin-top:2px">%s</div>'
                 '<div style="color:#94a3b8;font-size:12px;margin-top:2px">%s</div>'
-                '<div style="color:#64748b;font-size:11px;margin-top:2px">来源: %s</div>'
+                '<div style="color:#64748b;font-size:11px;margin-top:2px">Source: %s</div>'
                 '</div>' % (d['drug'], d['effect'], d['recommendation'], d['source'])
                 for d in db.get('drugs', [])
             )
             drug_block = '<div style="margin-top:12px;padding:12px;background:#1e293b;border-radius:8px;border-left:3px solid #f97316">'
-            drug_block += '<strong style="color:#f97316">💊 药物基因组学指导</strong>'
+            drug_block += '<strong style="color:#f97316">Pharmacogenomic Guidance</strong>'
             drug_block += '<p style="margin-top:6px;color:#94a3b8;font-size:13px">%s</p>' % db.get('description', '')
             drug_block += drugs
             drug_block += '</div>'
@@ -381,14 +501,14 @@ def generate_html_report(data: dict) -> str:
             f.get("chrom",""), f.get("pos",""), f.get("ref",""), f.get("alt",""), f.get("zygosity",""))
         card += '<div style="margin-left:auto;text-align:right">'
         card += '<div style="font-size:24px;font-weight:700;color:%s">%s</div>' % (color, score)
-        card += '<div style="font-size:11px;color:#64748b">证据分</div></div></div>'
+        card += '<div style="font-size:11px;color:#64748b">Evidence Score</div></div></div>'
         card += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">'
         card += '<span style="background:#1e293b;padding:4px 12px;border-radius:20px;font-size:12px">%s</span>' % f.get("category_cn","")
         card += '<span style="background:#1e293b;padding:4px 12px;border-radius:20px;font-size:12px">%s</span>' % f.get("clinvar_significance","")
         card += '<span style="background:#1e293b;padding:4px 12px;border-radius:20px;font-size:12px">%s</span>' % f.get("inheritance",{}).get("pattern_name","")
         card += '</div>'
         card += '<p style="color:#94a3b8;font-size:14px;line-height:1.6">%s</p>' % f.get("description","")
-        card += '<div style="margin-top:12px"><strong style="color:#e2e8f0;font-size:13px">建议行动：</strong>'
+        card += '<div style="margin-top:12px"><strong style="color:#e2e8f0;font-size:13px">Recommended Actions:</strong>'
         card += '<ul style="color:#94a3b8;font-size:13px;margin-top:6px;padding-left:20px">%s</ul></div>' % actions
         card += personal_block
         card += drug_block
@@ -397,7 +517,8 @@ def generate_html_report(data: dict) -> str:
 
     # Summary cards
     summary_html = []
-    cat_colors = {"需要临床行动": "#ef4444", "药物基因组学": "#3b82f6", "疾病风险": "#f97316", "携带者状态": "#eab308"}
+    cat_colors = {"Clinical Action Required": "#ef4444", "Pharmacogenomics": "#3b82f6", "Disease Risk": "#f97316", "Carrier Status": "#eab308",
+                  "需要临床行动": "#ef4444", "药物基因组学": "#3b82f6", "疾病风险": "#f97316", "携带者状态": "#eab308"}
     for c, n in cats.items():
         summary_html.append('<div style="flex:1;background:#151e32;border-radius:16px;padding:20px;text-align:center;border:1px solid #1e293b;min-width:140px">')
         summary_html.append('<div style="font-size:32px;font-weight:700;color:%s">%s</div>' % (cat_colors.get(c, "#64748b"), n))
@@ -412,19 +533,19 @@ def generate_html_report(data: dict) -> str:
         family = profile.get('family_history', [])
 
         profile_section = '<div style="background:#151e32;border-radius:16px;padding:20px;margin-bottom:20px;border:1px solid #1e293b">'
-        profile_section += '<h3 style="margin-bottom:12px;font-size:16px">👤 个人健康档案</h3>'
+        profile_section += '<h3 style="margin-bottom:12px;font-size:16px">Personal Health Profile</h3>'
         if basic:
-            profile_section += '<p style="color:#94a3b8;font-size:13px">年龄: %s · 性别: %s</p>' % (basic.get('age', '-'), basic.get('sex', '-'))
+            profile_section += '<p style="color:#94a3b8;font-size:13px">Age: %s · Sex: %s</p>' % (basic.get('age', '-'), basic.get('sex', '-'))
         if conditions:
-            profile_section += '<div style="margin-top:8px"><span style="color:#64748b;font-size:12px">现有症状/疾病: </span>%s</div>' % ', '.join(
+            profile_section += '<div style="margin-top:8px"><span style="color:#64748b;font-size:12px">Conditions: </span>%s</div>' % ', '.join(
                 '<span style="background:#1e293b;padding:2px 8px;border-radius:10px;font-size:12px">%s</span>' % c for c in conditions
             )
         if meds:
-            profile_section += '<div style="margin-top:8px"><span style="color:#64748b;font-size:12px">当前用药: </span>%s</div>' % ', '.join(
+            profile_section += '<div style="margin-top:8px"><span style="color:#64748b;font-size:12px">Medications: </span>%s</div>' % ', '.join(
                 '<span style="background:#1e293b;padding:2px 8px;border-radius:10px;font-size:12px">%s</span>' % m for m in meds
             )
         if family:
-            profile_section += '<div style="margin-top:8px"><span style="color:#64748b;font-size:12px">家族史: </span>%s</div>' % ', '.join(
+            profile_section += '<div style="margin-top:8px"><span style="color:#64748b;font-size:12px">Family History: </span>%s</div>' % ', '.join(
                 '<span style="background:#1e293b;padding:2px 8px;border-radius:10px;font-size:12px">%s(%s)</span>' % (fh.get('relation',''), fh.get('condition','')) for fh in family
             )
         profile_section += '</div>'
@@ -435,7 +556,7 @@ def generate_html_report(data: dict) -> str:
         metrics = health.get('latest_metrics', {})
         if metrics:
             health_section = '<div style="background:#151e32;border-radius:16px;padding:20px;margin-bottom:20px;border:1px solid #1e293b">'
-            health_section += '<h3 style="margin-bottom:12px;font-size:16px">🍎 Apple Health 指标</h3>'
+            health_section += '<h3 style="margin-bottom:12px;font-size:16px">Apple Health Metrics</h3>'
             health_section += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px">'
             for name, m in list(metrics.items())[:8]:
                 health_section += '<div style="background:#0f172a;padding:10px;border-radius:8px;text-align:center">'
@@ -449,36 +570,60 @@ def generate_html_report(data: dict) -> str:
     hospital_section = ''
     if hospitals:
         hospital_section = '<div style="background:#151e32;border-radius:16px;padding:20px;margin-bottom:20px;border:1px solid #1e293b">'
-        hospital_section += '<h3 style="margin-bottom:12px;font-size:16px">🏥 已上传医院报告</h3>'
+        hospital_section += '<h3 style="margin-bottom:12px;font-size:16px">Hospital Reports</h3>'
         hospital_section += '<div style="display:flex;flex-wrap:wrap;gap:8px">'
         for h in hospitals:
-            hospital_section += '<span style="background:#0f172a;padding:6px 12px;border-radius:8px;font-size:12px">📄 %s</span>' % h
+            hospital_section += '<span style="background:#0f172a;padding:6px 12px;border-radius:8px;font-size:12px">%s</span>' % h
         hospital_section += '</div></div>'
+
+    # v3.0: Family risks section
+    family_section = ''
+    if family_risks:
+        family_section = '<div style="background:#151e32;border-radius:16px;padding:20px;margin-bottom:20px;border:1px solid #1e293b">'
+        family_section += '<h3 style="margin-bottom:12px;font-size:16px">Family Genetic Risks</h3>'
+        for r in family_risks:
+            risk_color = '#ef4444' if r['probability'] >= 0.5 else '#f97316' if r['probability'] >= 0.25 else '#eab308'
+            family_section += '<div style="margin:8px 0;padding:12px;background:#0f172a;border-radius:8px;border-left:3px solid %s">' % risk_color
+            family_section += '<div style="font-weight:600;color:#e2e8f0;font-size:13px">%s · %s</div>' % (r['relation'], r['gene_symbol'])
+            family_section += '<div style="color:%s;font-size:12px;margin-top:2px">Risk: %.0f%% (%s)</div>' % (risk_color, r['probability']*100, r['risk_type'])
+            family_section += '<div style="color:#94a3b8;font-size:12px;margin-top:2px">%s</div>' % r['recommendation']
+            family_section += '</div>'
+        family_section += '</div>'
+
+    # v3.0: Alerts banner
+    alerts_banner = ''
+    if alerts > 0:
+        alerts_banner = '<div style="background:#450a0a;border:1px solid #ef4444;border-radius:12px;padding:16px;margin-bottom:20px;color:#fca5a5">'
+        alerts_banner += '<strong>Important Updates:</strong> %d new alert(s) detected for your genome. '
+        alerts_banner += '<a href="/api/alerts/%s" style="color:#ef4444;text-decoration:underline">View Alerts</a>' % data.get('sample_name', 'default')
+        alerts_banner += '</div>'
 
     # Build page
     page = []
-    page.append('<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">')
+    page.append('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">')
     page.append('<meta name="viewport" content="width=device-width,initial-scale=1.0">')
-    page.append('<title>DNA Report v2.1</title>')
+    page.append('<title>DNA Report v3.0</title>')
     page.append('<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0b1120;color:#e2e8f0;margin:0;padding:0}')
     page.append('.container{max-width:900px;margin:0 auto;padding:40px 20px}')
     page.append('h1{font-size:28px;margin-bottom:8px}h2{font-size:20px;margin:24px 0 12px}')
     page.append('.subtitle{color:#64748b;margin-bottom:24px;font-size:14px}')
     page.append('.summary{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}')
     page.append('</style></head><body><div class="container">')
-    page.append('<h1>🧬 个人基因组智能报告</h1>')
-    page.append('<p class="subtitle">知识图谱 v2.1 · %s · 共分析 %s 个变异 · 发现 %s 条相关</p>' % (
+    page.append('<h1>Personal Genome Intelligence Report</h1>')
+    page.append('<p class="subtitle">Knowledge Graph v3.0 · %s · Analyzed %s variants · Found %s relevant</p>' % (
         data.get("timestamp","")[:10], data.get("total_vcf_variants",0), len(findings)))
 
+    page.append(alerts_banner)
     page.append('<div class="summary">%s</div>' % ''.join(summary_html))
     page.append(profile_section)
     page.append(health_section)
     page.append(hospital_section)
+    page.append(family_section)
     page.append(''.join(cards_html))
 
     page.append('<div style="margin-top:40px;padding:20px;background:#151e32;border-radius:12px;border:1px solid #1e293b;font-size:12px;color:#64748b;text-align:center">')
-    page.append('<p>⚠️ 本报告仅供教育和研究参考，不能替代专业医疗建议。</p>')
-    page.append('<p style="margin-top:8px">DNA Personal Genome Intelligence v2.1 · 基于 ClinVar 知识图谱 · CPIC/PharmGKB 药物指导</p>')
+    page.append('<p>⚠️ This report is for educational and research purposes only. It does not replace professional medical advice.</p>')
+    page.append('<p style="margin-top:8px">DNA Personal Genome Intelligence v3.0 · ClinVar Knowledge Graph · CPIC/PharmGKB Drug Guidance · Longitudinal Memory · Family Graph</p>')
     page.append('</div></div></body></html>')
 
     return ''.join(page)
@@ -491,7 +636,7 @@ def serve_report(filename):
 
 @app.route("/api/report")
 def report_api():
-    r = REPORT / "report_v2.json"
+    r = REPORT / "report_v3.json"
     if r.exists():
         return jsonify(json.load(open(r, encoding='utf-8')))
     return jsonify({"findings": []})
@@ -499,8 +644,8 @@ def report_api():
 
 if __name__ == "__main__":
     print("=" * 50)
-    print("🧬 DNA Genome Intelligence v2.1")
-    print("知识图谱 + 规则推理 + 药物数据库 + 健康数据")
-    print("打开浏览器访问: http://localhost:5001")
+    print("DNA Genome Intelligence v3.0")
+    print("Knowledge Graph + Reasoning + Longitudinal Memory + Timeline + Family")
+    print("Open: http://localhost:5001")
     print("=" * 50)
     app.run(debug=False, port=5001, host='0.0.0.0')
