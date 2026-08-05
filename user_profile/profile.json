@@ -1,0 +1,48 @@
+{
+  "basic": {
+    "age": 38,
+    "sex": "female",
+    "ancestry": "East Asian",
+    "height_cm": 165,
+    "weight_kg": 58
+  },
+  "conditions": [
+    "anxiety",
+    "ADHD"
+  ],
+  "medications": [
+    "bupropion"
+  ],
+  "allergies": [
+    "penicillin"
+  ],
+  "family_history": [
+    {
+      "condition": "pancreatitis",
+      "relation": "father"
+    },
+    {
+      "condition": "breast cancer",
+      "relation": "maternal aunt"
+    }
+  ],
+  "lifestyle": {
+    "smoking": false,
+    "alcohol": "none",
+    "exercise": "moderate"
+  },
+  "lab_results": {
+    "LDL": {
+      "value": 140,
+      "unit": "mg/dL",
+      "date": "2026-01-15"
+    },
+    "HbA1c": {
+      "value": 5.4,
+      "unit": "%",
+      "date": "2026-01-15"
+    }
+  },
+  "apple_health": {},
+  "体检报告": {}
+}

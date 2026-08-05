@@ -1,0 +1,82 @@
+{
+  "diseases": {
+    "Hereditary pancreatitis": {
+      "severity": "moderate",
+      "actionable": true,
+      "surveillance": [
+        "Avoid alcohol",
+        "Avoid smoking",
+        "Monitor for abdominal pain"
+      ]
+    },
+    "Recurrent pancreatitis": {
+      "severity": "moderate",
+      "actionable": true,
+      "surveillance": [
+        "Avoid alcohol",
+        "Monitor symptoms"
+      ]
+    },
+    "Hereditary breast-ovarian cancer syndrome": {
+      "severity": "high",
+      "actionable": true,
+      "surveillance": [
+        "Mammography/MRI",
+        "Risk-reducing surgery discussion",
+        "Genetic counseling"
+      ]
+    },
+    "Cystic fibrosis": {
+      "severity": "high",
+      "actionable": false,
+      "surveillance": [
+        "Carrier screening for partner"
+      ]
+    },
+    "Late-onset Alzheimer's disease": {
+      "severity": "high",
+      "actionable": false,
+      "surveillance": [
+        "Cognitive monitoring",
+        "Cardiovascular risk management"
+      ]
+    },
+    "Factor V Leiden thrombophilia": {
+      "severity": "moderate",
+      "actionable": true,
+      "surveillance": [
+        "Avoid prolonged immobility",
+        "Prophylaxis during surgery/pregnancy"
+      ]
+    },
+    "Hereditary hemochromatosis": {
+      "severity": "moderate",
+      "actionable": true,
+      "surveillance": [
+        "Ferritin monitoring",
+        "Therapeutic phlebotomy if elevated"
+      ]
+    },
+    "Sanfilippo syndrome type B": {
+      "severity": "high",
+      "actionable": false,
+      "surveillance": [
+        "Reproductive counseling"
+      ]
+    },
+    "Nemaline myopathy": {
+      "severity": "variable",
+      "actionable": false,
+      "surveillance": [
+        "Reproductive counseling"
+      ]
+    },
+    "DPYD-related disorder": {
+      "severity": "high",
+      "actionable": true,
+      "surveillance": [
+        "Dose adjustment before 5-FU/capecitabine"
+      ]
+    }
+  }
+}
