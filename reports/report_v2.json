@@ -1,0 +1,122 @@
+{
+  "total_vcf_variants": 726,
+  "reported": 2,
+  "findings": [
+    {
+      "variant_id": 22495,
+      "chrom": "19",
+      "pos": 44908822,
+      "ref": "C",
+      "alt": "T",
+      "gene_symbol": "APOE",
+      "genotype": "0/1",
+      "zygosity": "heterozygous",
+      "clinvar_significance": "drug_response",
+      "disease": "",
+      "inheritance": {
+        "pattern": "AD",
+        "pattern_name": "Autosomal Dominant",
+        "zygosity": "heterozygous",
+        "affected_status": false,
+        "carrier_status": false,
+        "penetrance": 1.0,
+        "confidence": "low",
+        "explanation": "Variant not classified as pathogenic."
+      },
+      "score": {
+        "total_score": 8,
+        "significance_score": 5,
+        "review_score": 3,
+        "inheritance_bonus": 0,
+        "priority": "medium",
+        "factors": {
+          "clinvar_significance": "drug_response",
+          "review_status": "reviewed by expert panel",
+          "inheritance_pattern": "AD",
+          "affected_status": false,
+          "carrier_status": false
+        }
+      },
+      "category": "pharmacogenomics",
+      "category_cn": "药物基因组学",
+      "icon": "💊",
+      "urgency": "medium",
+      "description": "该变异可能影响药物代谢或反应，用药前建议咨询医生。",
+      "actionability": {
+        "actions": [
+          "携带此报告就诊时主动告知医生",
+          "开始新药物前查询药物基因组指南",
+          "避免自行调整药物剂量"
+        ],
+        "follow_up": "建议6-12个月复查医学知识库更新",
+        "genetic_counseling_recommended": false
+      },
+      "personal_context": null,
+      "recommendations": [
+        "携带此报告就诊时主动告知医生",
+        "开始新药物前查询药物基因组指南",
+        "避免自行调整药物剂量"
+      ]
+    },
+    {
+      "variant_id": 22493,
+      "chrom": "19",
+      "pos": 44905579,
+      "ref": "T",
+      "alt": "G",
+      "gene_symbol": "APOE",
+      "genotype": "1/1",
+      "zygosity": "homozygous",
+      "clinvar_significance": "drug_response",
+      "disease": "",
+      "inheritance": {
+        "pattern": "AD",
+        "pattern_name": "Autosomal Dominant",
+        "zygosity": "homozygous",
+        "affected_status": false,
+        "carrier_status": false,
+        "penetrance": 1.0,
+        "confidence": "low",
+        "explanation": "Variant not classified as pathogenic."
+      },
+      "score": {
+        "total_score": 4,
+        "significance_score": 5,
+        "review_score": -1,
+        "inheritance_bonus": 0,
+        "priority": "low",
+        "factors": {
+          "clinvar_significance": "drug_response",
+          "review_status": "no assertion criteria provided",
+          "inheritance_pattern": "AD",
+          "affected_status": false,
+          "carrier_status": false
+        }
+      },
+      "category": "pharmacogenomics",
+      "category_cn": "药物基因组学",
+      "icon": "💊",
+      "urgency": "medium",
+      "description": "该变异可能影响药物代谢或反应，用药前建议咨询医生。",
+      "actionability": {
+        "actions": [
+          "携带此报告就诊时主动告知医生",
+          "开始新药物前查询药物基因组指南",
+          "避免自行调整药物剂量"
+        ],
+        "follow_up": "建议6-12个月复查医学知识库更新",
+        "genetic_counseling_recommended": false
+      },
+      "personal_context": null,
+      "recommendations": [
+        "携带此报告就诊时主动告知医生",
+        "开始新药物前查询药物基因组指南",
+        "避免自行调整药物剂量"
+      ]
+    }
+  ],
+  "profile": null,
+  "health_data": null,
+  "hospital_files": [],
+  "timestamp": "2026-08-05T09:39:49.743144"
+}
