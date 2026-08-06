@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNA Genome Intelligence v3.0 — Demo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f6f8f7;color:#1d2939;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:32px 20px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.logo{font-size:24px;font-weight:700;color:#0f766e;display:flex;align-items:center;gap:8px}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{color:#667085;text-decoration:none;font-size:13px;padding:6px 14px;background:#fff;border-radius:20px;box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer}
+.nav a:hover{color:#0f766e}
+.nav a.active{color:#0f766e;background:#e6fffb;border:1px solid #99f6e4}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:24px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:20px;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,.06);margin-bottom:20px}
+.card h3{font-size:15px;font-weight:600;color:#1d2939;margin-bottom:14px}
+.metric{font-size:36px;font-weight:700;color:#0f766e;line-height:1}
+.small{color:#667085;font-size:13px}
+.tag{display:inline-block;background:#ecfdf3;color:#027a48;padding:4px 10px;border-radius:20px;font-size:12px;margin:2px 4px 2px 0}
+.tag-orange{background:#fff7ed;color:#c2410c}
+.tag-blue{background:#eff6ff;color:#1d4ed8}
+.tag-red{background:#fef2f2;color:#b91c1c}
+.chain{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}
+.node{padding:12px 16px;border-radius:14px;background:#e6fffb;border:1px solid #99f6e4;font-size:13px;text-align:center;min-width:90px}
+.node b{display:block;font-size:14px;margin-top:2px}
+.arrow{color:#94a3b8;font-size:20px}
+.alert-banner{border-left:5px solid #f97316;background:#fff7ed;padding:16px 20px;border-radius:0 12px 12px 0;margin-bottom:20px}
+.alert-banner a{color:#c2410c;text-decoration:none;font-weight:600}
+.timeline{border-left:3px solid #cbd5e1;padding-left:18px;margin-top:10px}
+.timeline-item{position:relative;margin:14px 0;padding-left:14px}
+.timeline-dot{position:absolute;left:-26px;top:4px;width:10px;height:10px;border-radius:50%;background:#0f766e}
+.timeline-date{font-size:11px;color:#667085;text-transform:uppercase;letter-spacing:.5px}
+.timeline-title{font-size:13px;font-weight:600;color:#1d2939;margin-top:2px}
+.timeline-desc{font-size:12px;color:#667085;margin-top:2px}
+.family-list{margin-top:8px}
+.family-item{padding:10px 14px;background:#f8fafc;border-radius:10px;margin-bottom:8px;border-left:3px solid #cbd5e1;font-size:13px}
+.finding-card{background:#fff;border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.finding-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.finding-title{font-size:18px;font-weight:700;color:#1d2939}
+.finding-meta{font-size:12px;color:#667085}
+.finding-score{font-size:28px;font-weight:700}
+.tags{margin-bottom:10px}
+.finding-desc{color:#475569;font-size:14px;line-height:1.6;margin:8px 0}
+.actions{font-size:13px;color:#475569}
+.actions ul{margin:6px 0;padding-left:18px}
+.actions li{margin:4px 0}
+.drug-panel{margin-top:12px;padding:12px;background:#fff7ed;border-radius:10px}
+.drug-item{font-size:13px;padding:6px 0;border-bottom:1px solid #fed7aa}
+.drug-item:last-child{border-bottom:none}
+.pheno-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pheno-tag{background:#f3f4f6;color:#374151;padding:4px 10px;border-radius:20px;font-size:12px}
+.med-list{margin-top:8px}
+.med-item{padding:10px;background:#f0fdf4;border-radius:10px;margin-bottom:8px;font-size:13px}
+.health-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.health-cell{background:#f8fafc;border-radius:10px;padding:12px;text-align:center}
+.health-name{font-size:11px;color:#667085}
+.health-val{font-size:20px;font-weight:700;color:#0f766e;margin-top:4px}
+.health-unit{font-size:10px;color:#94a3b8}
+.graph-placeholder{height:120px;background:radial-gradient(circle,#99f6e4 2px,transparent 3px);background-size:35px 35px;border-radius:15px;margin-top:10px;position:relative;overflow:hidden}
+.graph-placeholder::after{content:'Knowledge Graph Visualization';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#0f766e;font-size:14px;font-weight:600;opacity:.6}
+.footer{margin-top:40px;padding:20px;text-align:center;font-size:12px;color:#94a3b8}
+.page{display:none}
+.page.active{display:block}
+.dropzone{border:2px dashed #cbd5e1;border-radius:16px;padding:28px;text-align:center;background:#f8fafc;margin-bottom:12px}
+.dz-icon{font-size:32px;margin-bottom:8px}
+.dz-text{font-size:13px;color:#475569}
+.btn{width:100%;padding:14px;background:linear-gradient(90deg,#0f766e,#14b8a6);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(15,118,110,.25)}
+.step{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:13px;color:#64748b}
+.step-dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1}
+.step-dot.active{background:#0f766e}
+.step-dot.done{background:#14b8a6}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <div class="logo">🧬 Genome Intelligence</div>
+  <div class="nav">
+    <a class="active" onclick="showPage('demo')">Demo Report</a>
+    <a onclick="showPage('upload')">Upload</a>
+    <a onclick="showPage('about')">About</a>
+  </div>
+</div>
+
+<!-- ===== DEMO REPORT PAGE ===== -->
+<div id="demo" class="page active">
+
+<div class="alert-banner">
+  <b>Important Finding:</b> PRSS1 variant detected with pathogenic evidence. Review recommended.
+</div>
+
+<div class="grid">
+<div>
+  <div class="card">
+    <h3>Your Genome</h3>
+    <div class="metric">93,525</div>
+    <div class="small">variants analyzed</div>
+    <br>
+    <b>196 findings</b>
+    <p><span class="tag">17 High Priority</span></p>
+    <p class="small">Last knowledge update<br>2026-08-05</p>
+  </div>
+
+  <div class="card">
+    <h3>Longitudinal Genome Memory</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#ef4444"></div>
+        <div class="timeline-date">2026-08-05 · GENOME</div>
+        <div class="timeline-title">Genome Analysis Completed</div>
+        <div class="timeline-desc">Discovered 2 ClinVar-related variants</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#3b82f6"></div>
+        <div class="timeline-date">2026-08-05 · WEARABLE</div>
+        <div class="timeline-title">Apple Health: Resting Heart Rate</div>
+        <div class="timeline-desc">Resting Heart Rate = 62.0 bpm</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#f97316"></div>
+        <div class="timeline-date">2026-08-05 · SYMPTOM</div>
+        <div class="timeline-title">Condition: anxiety</div>
+        <div class="timeline-desc">From personal health profile</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#a78bfa"></div>
+        <div class="timeline-date">2026-08-05 · MILESTONE</div>
+        <div class="timeline-title">Family History: father - pancreatitis</div>
+        <div class="timeline-desc">From personal health profile</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Family Graph</h3>
+    <div class="family-list">
+      <div class="family-item" style="border-left-color:#ef4444">
+        <b>father</b> · PRSS1<br>
+        <span style="color:#ef4444">Risk: 50% (inherited)</span><br>
+        <small>father has 50% chance of carrying the pathogenic PRSS1 variant. Genetic testing strongly recommended.</small>
+      </div>
+      <div class="family-item" style="border-left-color:#ef4444">
+        <b>mother</b> · PRSS1<br>
+        <span style="color:#ef4444">Risk: 50% (inherited)</span><br>
+        <small>mother has 50% chance of carrying the pathogenic PRSS1 variant. Genetic testing strongly recommended.</small>
+      </div>
+      <div class="family-item" style="border-left-color:#eab308">
+        <b>sibling</b> · PRSS1<br>
+        <span style="color:#eab308">Risk: 50% (inherited)</span><br>
+        <small>sibling has 50% chance of carrying the pathogenic PRSS1 variant. Genetic testing strongly recommended.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Apple Health</h3>
+    <div class="health-grid">
+      <div class="health-cell"><div class="health-name">Resting Heart Rate</div><div class="health-val">62.0</div><div class="health-unit">bpm</div></div>
+      <div class="health-cell"><div class="health-name">BMI</div><div class="health-val">22.5</div><div class="health-unit">kg/m2</div></div>
+      <div class="health-cell"><div class="health-name">Steps</div><div class="health-val">8432</div><div class="health-unit">count</div></div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <div class="card">
+    <h2 style="margin:0 0 8px 0;font-size:18px">AI Medical Reasoning Engine</h2>
+    <p class="small">From raw variant to personal medical meaning</p>
+    <div class="chain">
+      <div class="node">Variant<br><b>chr7:142458823</b></div>
+      <div class="arrow">→</div>
+      <div class="node">PRSS1<br><b>p.Ala16Val</b></div>
+      <div class="arrow">→</div>
+      <div class="node" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c">Disease<br><b>Hereditary Pancreatitis</b></div>
+      <div class="arrow">→</div>
+      <div class="node" style="background:#f0fdf4;border-color:#86efac;color:#15803d">Action<br><b>Clinical Context</b></div>
+    </div>
+  </div>
+
+  <div class="card alert-banner">
+    <h3 style="margin:0 0 8px 0">Important Finding</h3>
+    <b>PRSS1 c.47C>T (p.Ala16Val)</b>
+    <p>Evidence: Pathogenic</p>
+    <p class="small">Reasoning: Variant + gene function + disease database + phenotype matching</p>
+    <p class="small">Next: review with genetic counselor if clinically relevant</p>
+  </div>
+
+  <div class="card">
+    <h3>Phenotype Matching</h3>
+    <p class="small">Input: symptoms, family history, labs</p>
+    <p class="small">AI matches possible gene-disease relationships.</p>
+    <div class="pheno-tags">
+      <span class="pheno-tag">anxiety</span>
+      <span class="pheno-tag">insomnia</span>
+      <span class="pheno-tag">father: pancreatitis</span>
+    </div>
+    <p style="margin-top:10px"><b>1 variant</b> matches your phenotype profile.</p>
+  </div>
+
+  <div class="card">
+    <h3>Medication Intelligence</h3>
+    <p class="small">Before medication: check DPYD / CYP / VKORC1 related risks.</p>
+    <div class="med-list">
+      <div class="med-item">
+        <b>Alcohol</b> <span style="color:#c2410c">Triggers acute pancreatitis attacks</span><br>
+        <small>Strict abstinence from alcohol [Clinical Guideline]</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Medical Knowledge Graph</h3>
+    <div class="graph-placeholder"></div>
+    <p class="small" style="margin-top:8px">Gene ↔ Disease ↔ Drug ↔ Phenotype network</p>
+  </div>
+
+  <div>
+    <h2 style="font-size:18px;margin:24px 0 12px">Detailed Findings</h2>
+
+    <div class="finding-card">
+      <div class="finding-header">
+        <div>
+          <div class="finding-title">💊 APOE</div>
+          <div class="finding-meta">Chr19:44908822 · C→T · heterozygous</div>
+        </div>
+        <div class="finding-score" style="color:#f97316">8</div>
+      </div>
+      <div class="tags">
+        <span class="tag">药物基因组学</span>
+        <span class="tag">drug_response</span>
+        <span class="tag">Autosomal Dominant</span>
+      </div>
+      <p class="finding-desc">该变异可能影响药物代谢或反应，用药前建议咨询医生。</p>
+      <div class="actions">
+        <b>Recommended Actions:</b>
+        <ul>
+          <li>携带此报告就诊时主动告知医生</li>
+          <li>开始新药物前查询药物基因组指南</li>
+          <li>避免自行调整药物剂量</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="finding-card">
+      <div class="finding-header">
+        <div>
+          <div class="finding-title">💊 APOE</div>
+          <div class="finding-meta">Chr19:44905579 · T→G · homozygous</div>
+        </div>
+        <div class="finding-score" style="color:#f97316">4</div>
+      </div>
+      <div class="tags">
+        <span class="tag">药物基因组学</span>
+        <span class="tag">drug_response</span>
+        <span class="tag">Autosomal Dominant</span>
+      </div>
+      <p class="finding-desc">该变异可能影响药物代谢或反应，用药前建议咨询医生。</p>
+      <div class="actions">
+        <b>Recommended Actions:</b>
+        <ul>
+          <li>携带此报告就诊时主动告知医生</li>
+          <li>开始新药物前查询药物基因组指南</li>
+          <li>避免自行调整药物剂量</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="footer">
+  <p>⚠️ This report is for educational and research purposes only. It does not replace professional medical advice.</p>
+  <p>DNA Personal Genome Intelligence v3.0 · ClinVar Knowledge Graph · CPIC/PharmGKB · Longitudinal Memory · Family Graph</p>
+</div>
+</div>
+
+<!-- ===== UPLOAD PAGE ===== -->
+<div id="upload" class="page">
+<div class="grid">
+<div>
+  <div class="card">
+    <h3>Analysis Pipeline</h3>
+    <div class="step"><div class="step-dot done"></div><span>Upload VCF</span></div>
+    <div class="step"><div class="step-dot done"></div><span>Parse variants</span></div>
+    <div class="step"><div class="step-dot done"></div><span>Query ClinVar KG</span></div>
+    <div class="step"><div class="step-dot active"></div><span>Reasoning engine</span></div>
+    <div class="step"><div class="step-dot"></div><span>Build timeline</span></div>
+    <div class="step"><div class="step-dot"></div><span>Family risks</span></div>
+    <div class="step"><div class="step-dot"></div><span>Generate report</span></div>
+  </div>
+  <div class="card">
+    <h3>Supported Inputs</h3>
+    <p class="small">VCF / VCF.gz — genome data</p>
+    <p class="small">JSON — health profile</p>
+    <p class="small">XML — Apple Health export</p>
+    <p class="small">PDF/IMG — hospital reports</p>
+  </div>
+</div>
+<div>
+  <div class="card">
+    <h3>1. Genome Data <span style="color:#ef4444">*</span></h3>
+    <div class="dropzone">
+      <div class="dz-icon">🧬</div>
+      <div class="dz-text">Click or drag to upload .vcf / .vcf.gz</div>
+      <div class="small" style="margin-top:4px">Requires Python backend. This is a static demo.</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>2. Health Profile <span class="tag" style="font-size:11px;padding:2px 8px">Optional</span></h3>
+    <div class="dropzone">
+      <div class="dz-icon">📋</div>
+      <div class="dz-text">Upload profile.json</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>3. Apple Health Export <span class="tag" style="font-size:11px;padding:2px 8px">Optional</span></h3>
+    <div class="dropzone">
+      <div class="dz-icon">❤️</div>
+      <div class="dz-text">Upload export.xml</div>
+    </div>
+  </div>
+  <button class="btn" onclick="alert('This is a static demo. Run python web_api_v3.py locally for full analysis.')">Start Genome Analysis</button>
+</div>
+</div>
+</div>
+
+<!-- ===== ABOUT PAGE ===== -->
+<div id="about" class="page">
+<div class="card" style="max-width:800px">
+  <h2>DNA Genome Intelligence v3.0</h2>
+  <p class="small" style="margin:12px 0">A personal genome analysis platform with knowledge graph, medical reasoning engine, longitudinal memory, and family graph.</p>
+  
+  <h3 style="margin-top:24px">Architecture</h3>
+  <div class="chain" style="margin-top:12px">
+    <div class="node">VCF Parser</div>
+    <div class="arrow">→</div>
+    <div class="node">Knowledge Graph</div>
+    <div class="arrow">→</div>
+    <div class="node">Reasoning Engine</div>
+    <div class="arrow">→</div>
+    <div class="node">Phenotype Match</div>
+    <div class="arrow">→</div>
+    <div class="node">Medication Intel</div>
+    <div class="arrow">→</div>
+    <div class="node">Genome Memory</div>
+    <div class="arrow">→</div>
+    <div class="node">Family Graph</div>
+  </div>
+
+  <h3 style="margin-top:24px">Tech Stack</h3>
+  <p class="small">Python 3 · Flask · SQLite · ClinVar · CPIC/PharmGKB</p>
+
+  <h3 style="margin-top:24px">GitHub</h3>
+  <p class="small"><a href="https://github.com/hanbing6228/DNA" style="color:#0f766e">github.com/hanbing6228/DNA</a></p>
+
+  <h3 style="margin-top:24px">Local Setup</h3>
+  <pre style="background:#f8fafc;padding:16px;border-radius:12px;font-size:12px;margin-top:8px;overflow:auto">
+git clone https://github.com/hanbing6228/DNA.git
+cd DNA
+pip install flask
+python fix_v3.py
+python web_api_v3.py
+# Open http://localhost:5001
+  </pre>
+</div>
+</div>
+
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
