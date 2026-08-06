@@ -6,163 +6,233 @@
 <title>DNA Genome Intelligence v3.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0b1120;color:#e2e8f0;line-height:1.6}
-.container{max-width:800px;margin:0 auto;padding:48px 20px}
-h1{font-size:32px;margin-bottom:8px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.subtitle{color:#64748b;margin-bottom:40px}
-.card{background:#151e32;border-radius:16px;padding:24px;margin-bottom:16px;border:1px solid #1e293b}
-.card-title{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.required{color:#ef4444}
-.optional{background:#1e293b;color:#64748b;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:auto}
-.dropzone{border:2px dashed #334155;border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
-.dropzone:hover{border-color:#60a5fa;background:#1e293b}
-.dropzone.dragover{border-color:#60a5fa;background:#1e293b;transform:scale(1.02)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f6f8f7;color:#1d2939;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:32px 20px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.logo{font-size:24px;font-weight:700;color:#0f766e;display:flex;align-items:center;gap:8px}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{color:#667085;text-decoration:none;font-size:13px;padding:6px 14px;background:#fff;border-radius:20px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.nav a:hover{color:#0f766e}
+.grid{display:grid;grid-template-columns:280px 1fr;gap:24px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:20px;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,.06);margin-bottom:20px}
+.card h3{font-size:15px;font-weight:600;color:#1d2939;margin-bottom:14px}
+.small{color:#667085;font-size:13px}
+.tag{display:inline-block;background:#ecfdf3;color:#027a48;padding:4px 10px;border-radius:20px;font-size:12px;margin:2px 4px 2px 0}
+.dropzone{border:2px dashed #cbd5e1;border-radius:16px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fafc;margin-bottom:12px}
+.dropzone:hover{border-color:#0f766e;background:#e6fffb}
+.dropzone.dragover{border-color:#0f766e;background:#e6fffb;transform:scale(1.01)}
 .dropzone input{display:none}
-.file-name{margin-top:8px;font-size:13px;color:#60a5fa}
-.btn{width:100%;padding:14px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;position:relative;overflow:hidden}
-.btn:hover{opacity:.9}
-.btn:disabled{opacity:.6;cursor:not-allowed}
-.status{margin-top:16px;padding:12px;border-radius:8px;font-size:14px;display:none}
-.status.success{background:#064e3b;color:#6ee7b7;display:block}
-.status.error{background:#450a0a;color:#fca5a5;display:block}
-.status.info{background:#1e3a5f;color:#93c5fd;display:block}
-textarea{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px;color:#e2e8f0;font-family:monospace;font-size:13px;resize:vertical}
-.hint{font-size:12px;color:#64748b;margin-top:6px}
+.dz-icon{font-size:32px;margin-bottom:8px}
+.dz-text{font-size:13px;color:#475569}
+.dz-hint{font-size:11px;color:#94a3b8;margin-top:4px}
+.file-list{margin-top:8px;font-size:13px;color:#0f766e}
+.file-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#f0fdf4;border-radius:8px;margin-top:4px;font-size:12px}
+.file-item button{background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;margin-left:auto}
+.btn{width:100%;padding:14px;background:linear-gradient(90deg,#0f766e,#14b8a6);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(15,118,110,.25);transition:all .2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(15,118,110,.3)}
+.btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.status{margin-top:16px;padding:14px 18px;border-radius:12px;font-size:14px;display:none}
+.status.success{background:#ecfdf3;color:#047857;border:1px solid #a7f3d0;display:block}
+.status.error{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;display:block}
+.status.info{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;display:block}
+textarea{width:100%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;color:#1d2939;font-family:monospace;font-size:12px;resize:vertical}
+textarea:focus{outline:none;border-color:#0f766e}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:600px){.row{grid-template-columns:1fr}}
-.spinner{display:none;width:20px;height:20px;border:3px solid rgba(255,255,255,.3);border-radius:50%;border-top-color:#fff;animation:spin 1s ease-in-out infinite;margin-right:10px;vertical-align:middle}
+.spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-radius:50%;border-top-color:#fff;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btn.loading .spinner{display:inline-block}
-.btn.loading{color:transparent}
-.progress-container{display:none;margin-top:12px;background:#0f172a;border-radius:8px;height:8px;overflow:hidden}
-.progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:8px;transition:width .3s}
-.nav{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
-.nav a{color:#94a3b8;text-decoration:none;font-size:13px;padding:6px 12px;background:#1e293b;border-radius:8px}
-.nav a:hover{color:#60a5fa}
+.progress-container{display:none;margin-top:12px;background:#e2e8f0;border-radius:10px;height:8px;overflow:hidden}
+.progress-bar{height:100%;width:0%;background:linear-gradient(90deg,#0f766e,#14b8a6);border-radius:10px;transition:width .3s}
+.step{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:13px;color:#64748b}
+.step-dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1}
+.step-dot.active{background:#0f766e}
+.step-dot.done{background:#14b8a6}
+.preview-panel{background:#f8fafc;border-radius:12px;padding:16px;margin-top:12px;display:none}
+.preview-panel.show{display:block}
+.preview-title{font-size:12px;font-weight:600;color:#475569;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.preview-content{font-size:12px;color:#647085;max-height:200px;overflow:auto}
+.footer{margin-top:40px;padding:20px;text-align:center;font-size:12px;color:#94a3b8}
 </style>
 </head>
 <body>
 <div class="container">
-<h1>DNA Genome Intelligence v3.0</h1>
-<p class="subtitle">Knowledge Graph · Reasoning Engine · Longitudinal Memory · Family Graph</p>
-
-<div class="nav">
-  <a href="#analyze">Analyze</a>
-  <a href="#timeline">Timeline</a>
-  <a href="#family">Family</a>
-  <a href="#alerts">Alerts</a>
+<div class="header">
+  <div class="logo">🧬 Genome Intelligence</div>
+  <div class="nav">
+    <a href="/">Analyze</a>
+    <a href="/reports/report_v3.html">Latest Report</a>
+    <a href="/api/report" target="_blank">JSON</a>
+  </div>
 </div>
 
+<div class="grid">
+<div>
+  <div class="card">
+    <h3>Analysis Pipeline</h3>
+    <div class="step"><div class="step-dot active" id="step1"></div><span>Upload VCF</span></div>
+    <div class="step"><div class="step-dot" id="step2"></div><span>Parse variants</span></div>
+    <div class="step"><div class="step-dot" id="step3"></div><span>Query ClinVar KG</span></div>
+    <div class="step"><div class="step-dot" id="step4"></div><span>Reasoning engine</span></div>
+    <div class="step"><div class="step-dot" id="step5"></div><span>Build timeline</span></div>
+    <div class="step"><div class="step-dot" id="step6"></div><span>Family risks</span></div>
+    <div class="step"><div class="step-dot" id="step7"></div><span>Generate report</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Supported Inputs</h3>
+    <p class="small">VCF / VCF.gz — genome data</p>
+    <p class="small">JSON — health profile</p>
+    <p class="small">XML — Apple Health export</p>
+    <p class="small">PDF/IMG — hospital reports</p>
+  </div>
+</div>
+
+<div>
 <form id="uploadForm" enctype="multipart/form-data">
 
-<div class="card" id="analyze">
-<div class="card-title">VCF File <span class="required">*</span></div>
-<div class="dropzone" id="vcfZone">
-<input type="file" name="vcf" accept=".vcf,.vcf.gz" id="vcfInput">
-<div class="dz-text">Click or drag to upload .vcf / .vcf.gz</div>
-<div class="file-name" id="vcfName"></div>
-</div>
+<div class="card">
+  <h3>1. Genome Data <span style="color:#ef4444">*</span></h3>
+  <div class="dropzone" id="vcfZone">
+    <input type="file" name="vcf" accept=".vcf,.vcf.gz" id="vcfInput">
+    <div class="dz-icon">🧬</div>
+    <div class="dz-text">Click or drag to upload .vcf / .vcf.gz</div>
+    <div class="dz-hint">Required. Supports gzip compressed files.</div>
+    <div class="file-list" id="vcfList"></div>
+  </div>
 </div>
 
 <div class="card">
-<div class="card-title">Health Profile <span class="optional">Optional</span></div>
-<div class="dropzone" id="profileZone">
-<input type="file" name="profile" accept=".json" id="profileInput">
-<div class="dz-text">Upload profile.json</div>
-<div class="file-name" id="profileName"></div>
-</div>
-<p class="hint">Or paste JSON directly:</p>
-<textarea name="profile_json" rows="5" id="profileJson" placeholder='{
+  <h3>2. Health Profile <span style="background:#f3f4f6;color:#667085;padding:2px 8px;border-radius:10px;font-size:11px">Optional</span></h3>
+  <div class="dropzone" id="profileZone">
+    <input type="file" name="profile" accept=".json" id="profileInput">
+    <div class="dz-icon">📋</div>
+    <div class="dz-text">Upload profile.json</div>
+    <div class="dz-hint">Age, sex, conditions, medications, family history</div>
+    <div class="file-list" id="profileList"></div>
+  </div>
+  <p class="small" style="margin:8px 0 4px">Or paste JSON directly:</p>
+  <textarea name="profile_json" rows="4" id="profileJson" placeholder='{
   "basic": {"age": 38, "sex": "female"},
-  "conditions": ["anxiety", "insomnia"],
+  "conditions": ["anxiety"],
   "medications": ["bupropion"],
-  "family_history": [
-    {"condition": "pancreatitis", "relation": "father"}
-  ]
+  "family_history": [{"condition": "pancreatitis", "relation": "father"}]
 }'></textarea>
+  <div class="preview-panel" id="profilePreview">
+    <div class="preview-title">Profile Preview</div>
+    <div class="preview-content" id="profilePreviewContent"></div>
+  </div>
 </div>
 
 <div class="card">
-<div class="card-title">Apple Health Export <span class="optional">Optional</span></div>
-<div class="dropzone" id="healthZone">
-<input type="file" name="health" accept=".xml" id="healthInput">
-<div class="dz-text">Upload export.xml (iPhone Health App)</div>
-<div class="file-name" id="healthName"></div>
-</div>
-</div>
-
-<div class="card">
-<div class="card-title">Hospital Reports <span class="optional">Optional</span></div>
-<div class="dropzone" id="reportZone">
-<input type="file" name="reports" accept=".pdf,.png,.jpg,.jpeg,.txt,.csv" multiple id="reportInput">
-<div class="dz-text">Upload PDF / images / text (multiple)</div>
-<div class="file-name" id="reportName"></div>
-</div>
+  <h3>3. Apple Health Export <span style="background:#f3f4f6;color:#667085;padding:2px 8px;border-radius:10px;font-size:11px">Optional</span></h3>
+  <div class="dropzone" id="healthZone">
+    <input type="file" name="health" accept=".xml" id="healthInput">
+    <div class="dz-icon">❤️</div>
+    <div class="dz-text">Upload export.xml</div>
+    <div class="dz-hint">From iPhone Health App → Profile → Export All Health Data</div>
+    <div class="file-list" id="healthList"></div>
+  </div>
 </div>
 
 <div class="card">
-<div class="card-title">Analysis Parameters</div>
-<div class="row">
-<div>
-<label style="font-size:13px;color:#94a3b8">Max Variants</label>
-<input type="number" name="max_variants" value="50000" style="width:100%;margin-top:6px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0">
+  <h3>4. Hospital Reports <span style="background:#f3f4f6;color:#667085;padding:2px 8px;border-radius:10px;font-size:11px">Optional</span></h3>
+  <div class="dropzone" id="reportZone">
+    <input type="file" name="reports" accept=".pdf,.png,.jpg,.jpeg,.txt,.csv" multiple id="reportInput">
+    <div class="dz-icon">🏥</div>
+    <div class="dz-text">Upload PDF / images / text</div>
+    <div class="dz-hint">Multiple files supported</div>
+    <div class="file-list" id="reportList"></div>
+  </div>
 </div>
-<div>
-<label style="font-size:13px;color:#94a3b8">Min Score (0=show all)</label>
-<input type="number" name="min_score" value="0" style="width:100%;margin-top:6px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#e2e8f0">
-</div>
-</div>
+
+<div class="card">
+  <h3>Parameters</h3>
+  <div class="row">
+    <div>
+      <label class="small">Max Variants</label>
+      <input type="number" name="max_variants" value="50000" style="width:100%;margin-top:6px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;color:#1d2939">
+    </div>
+    <div>
+      <label class="small">Min Score (0=all)</label>
+      <input type="number" name="min_score" value="0" style="width:100%;margin-top:6px;padding:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;color:#1d2939">
+    </div>
+  </div>
 </div>
 
 <button type="submit" class="btn" id="submitBtn">
-<span class="spinner"></span>
-<span class="btn-text">Start Analysis</span>
+  <span class="spinner"></span>
+  <span class="btn-text">Start Genome Analysis</span>
 </button>
 
 <div class="progress-container" id="progressContainer">
-<div class="progress-bar" id="progressBar"></div>
+  <div class="progress-bar" id="progressBar"></div>
 </div>
 
 <div id="status" class="status"></div>
 
 </form>
-
-<!-- v3.0: Quick Links -->
-<div class="card" style="margin-top:24px">
-<div class="card-title">Quick Access</div>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<a href="/reports/report_v3.html" target="_blank" style="padding:8px 16px;background:#1e293b;border-radius:8px;color:#60a5fa;text-decoration:none;font-size:13px">Latest Report</a>
-<a href="/api/report" target="_blank" style="padding:8px 16px;background:#1e293b;border-radius:8px;color:#60a5fa;text-decoration:none;font-size:13px">JSON Data</a>
 </div>
 </div>
 
+<div class="footer">
+  <p>DNA Personal Genome Intelligence v3.0 · Knowledge Graph · Reasoning Engine · Longitudinal Memory</p>
+</div>
 </div>
 
 <script>
-function setupDropzone(zoneId, inputId, nameId) {
+function setStep(n, state) {
+  var dots = document.querySelectorAll('.step-dot');
+  for (var i = 0; i < dots.length; i++) {
+    dots[i].className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+  }
+}
+
+function setupDropzone(zoneId, inputId, listId, single) {
   var zone = document.getElementById(zoneId);
   var input = document.getElementById(inputId);
-  var nameEl = document.getElementById(nameId);
+  var list = document.getElementById(listId);
   zone.addEventListener('click', function(){input.click();});
   zone.addEventListener('dragover', function(e){e.preventDefault();zone.classList.add('dragover');});
   zone.addEventListener('dragleave', function(){zone.classList.remove('dragover');});
   zone.addEventListener('drop', function(e){
     e.preventDefault();zone.classList.remove('dragover');
-    input.files = e.dataTransfer.files;
-    showFile(input, nameEl);
+    if (single) input.files = e.dataTransfer.files;
+    else input.files = e.dataTransfer.files;
+    showFiles(input, list, single);
   });
-  input.addEventListener('change', function(){showFile(input, nameEl);});
+  input.addEventListener('change', function(){showFiles(input, list, single);});
 }
 
-function showFile(input, nameEl) {
-  var names = Array.from(input.files).map(function(f){return f.name}).join(', ');
-  nameEl.textContent = names || '';
+function showFiles(input, list, single) {
+  list.innerHTML = '';
+  Array.from(input.files).forEach(function(f){
+    var div = document.createElement('div');
+    div.className = 'file-item';
+    div.innerHTML = '<span>📄 ' + f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)</span>';
+    list.appendChild(div);
+  });
 }
 
-setupDropzone('vcfZone', 'vcfInput', 'vcfName');
-setupDropzone('profileZone', 'profileInput', 'profileName');
-setupDropzone('healthZone', 'healthInput', 'healthName');
-setupDropzone('reportZone', 'reportInput', 'reportName');
+setupDropzone('vcfZone', 'vcfInput', 'vcfList', true);
+setupDropzone('profileZone', 'profileInput', 'profileList', true);
+setupDropzone('healthZone', 'healthInput', 'healthList', true);
+setupDropzone('reportZone', 'reportInput', 'reportList', false);
+
+// Live JSON preview
+var profileJson = document.getElementById('profileJson');
+var profilePreview = document.getElementById('profilePreview');
+var profilePreviewContent = document.getElementById('profilePreviewContent');
+profileJson.addEventListener('input', function(){
+  try {
+    var obj = JSON.parse(profileJson.value);
+    profilePreviewContent.textContent = JSON.stringify(obj, null, 2);
+    profilePreview.classList.add('show');
+  } catch(e){
+    profilePreview.classList.remove('show');
+  }
+});
 
 var form = document.getElementById('uploadForm');
 var btn = document.getElementById('submitBtn');
@@ -180,20 +250,23 @@ form.onsubmit = function(e) {
 
   btn.disabled = true;
   btn.classList.add('loading');
-  document.querySelector('.btn-text').textContent = 'Parsing VCF...';
+  document.querySelector('.btn-text').textContent = 'Uploading...';
   status.className = 'status info';
-  status.textContent = 'Analyzing VCF, querying ClinVar knowledge graph...';
+  status.textContent = 'Starting analysis pipeline...';
   progressContainer.style.display = 'block';
-  progressBar.style.width = '10%';
+  progressBar.style.width = '5%';
+  setStep(1, 'active');
 
   var xhr = new XMLHttpRequest();
   var fd = new FormData(form);
 
   xhr.upload.addEventListener('progress', function(e) {
     if (e.lengthComputable) {
-      var pct = Math.round((e.loaded / e.total) * 40) + 10;
+      var pct = Math.round((e.loaded / e.total) * 30) + 5;
       progressBar.style.width = pct + '%';
-      document.querySelector('.btn-text').textContent = 'Uploading ' + pct + '%';
+      if (pct < 15) { setStep(1, 'active'); document.querySelector('.btn-text').textContent = 'Uploading VCF...'; }
+      else if (pct < 25) { setStep(2, 'active'); document.querySelector('.btn-text').textContent = 'Parsing variants...'; }
+      else { setStep(3, 'active'); document.querySelector('.btn-text').textContent = 'Querying knowledge graph...'; }
     }
   });
 
@@ -202,22 +275,23 @@ form.onsubmit = function(e) {
       progressBar.style.width = '100%';
       btn.disabled = false;
       btn.classList.remove('loading');
+      setStep(7, 'done');
 
       try {
         var data = JSON.parse(xhr.responseText);
         if (data.success) {
           status.className = 'status success';
-          status.innerHTML = 'Analysis complete! Found <strong>' + data.reported + '</strong> relevant variants.<br>Opening report...';
-          setTimeout(function(){window.open(data.redirect, '_blank');}, 600);
+          status.innerHTML = '<b>Analysis complete!</b> Found ' + data.reported + ' relevant variants.<br><a href="' + data.redirect + '" target="_blank" style="color:#047857;font-weight:600">Open Report →</a>';
+          setTimeout(function(){window.open(data.redirect, '_blank');}, 800);
         } else {
           status.className = 'status error';
           status.textContent = data.error || 'Analysis failed';
-          document.querySelector('.btn-text').textContent = 'Start Analysis';
+          document.querySelector('.btn-text').textContent = 'Start Genome Analysis';
         }
       } catch(err) {
         status.className = 'status error';
         status.textContent = 'Server error: ' + xhr.status;
-        document.querySelector('.btn-text').textContent = 'Start Analysis';
+        document.querySelector('.btn-text').textContent = 'Start Genome Analysis';
       }
     }
   };
@@ -226,8 +300,8 @@ form.onsubmit = function(e) {
     btn.disabled = false;
     btn.classList.remove('loading');
     status.className = 'status error';
-    status.textContent = 'Network error, please retry';
-    document.querySelector('.btn-text').textContent = 'Start Analysis';
+    status.textContent = 'Network error. Is the server running on port 5001?';
+    document.querySelector('.btn-text').textContent = 'Start Genome Analysis';
   };
 
   xhr.open('POST', '/api/analyze');

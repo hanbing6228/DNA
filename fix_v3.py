@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
-"""One-click upgrade: v2.1 -> v3.0"""
-import sys
-from pathlib import Path
-import shutil
+"""
+Emergency fix: apply v3 schema directly to existing database.
+Run this if migrate_v2_to_v3.py fails with "no such table".
+"""
 import sqlite3
+import shutil
+from pathlib import Path
 
-BASE = Path(__file__).parent
-sys.path.insert(0, str(BASE))
+DB = Path(__file__).parent / "database" / "dna_knowledge.db"
+BACKUP = DB.with_suffix('.db.v2_backup')
 
-from database.db import DB_PATH
+# Step 1: Restore from backup if available
+if BACKUP.exists():
+    shutil.copy(BACKUP, DB)
+    print(f"[1/5] Restored database from: {BACKUP}")
+else:
+    print(f"[1/5] No backup found at {BACKUP}, using current DB")
 
-V3_SCHEMA = """
+# Step 2: Connect and inspect
+conn = sqlite3.connect(str(DB))
+cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+existing = {row[0] for row in cursor.fetchall()}
+print(f"[2/5] Existing tables ({len(existing)}): {sorted(existing)}")
+
+# Step 3: Apply v3 schema
+V3_SQL = """
 CREATE TABLE IF NOT EXISTS clinvar_snapshots (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -111,44 +125,30 @@ CREATE TABLE IF NOT EXISTS lab_results (
 );
 """
 
+conn.executescript(V3_SQL)
+conn.commit()
+print("[3/5] v3 schema executed")
 
-def migrate():
-    # 1. Backup
-    backup = DB_PATH.with_suffix('.db.v2_backup')
-    if DB_PATH.exists():
-        shutil.copy(DB_PATH, backup)
-        print(f"Backed up old database: {backup}")
+# Step 4: Verify
+cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+after = {row[0] for row in cursor.fetchall()}
+new_tables = after - existing
+print(f"[4/5] New tables created ({len(new_tables)}): {sorted(new_tables)}")
 
-    # 2. Apply v3 schema directly (embedded, no file read)
-    print("Applying v3.0 schema...")
-    conn = sqlite3.connect(str(DB_PATH))
-    conn.executescript(V3_SCHEMA)
-    conn.commit()
-
-    # Verify tables were created
-    cursor = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
-    tables = {row[0] for row in cursor.fetchall()}
-    required = {'clinvar_snapshots', 'variant_history', 'user_alerts',
-                'timeline_events', 'family_members', 'family_risks'}
-    missing = required - tables
-    if missing:
-        conn.close()
-        raise RuntimeError(f"Schema application failed. Missing tables: {missing}")
+missing = {'clinvar_snapshots', 'variant_history', 'user_alerts',
+           'timeline_events', 'family_members', 'family_risks'} - after
+if missing:
+    print(f"    ERROR: Still missing tables: {missing}")
     conn.close()
-    print("v3.0 schema applied successfully")
+    raise SystemExit(1)
 
-    # 3. Create initial snapshot
-    from database.db import get_conn
-    with get_conn() as conn:
-        count = conn.execute("SELECT COUNT(*) FROM variants").fetchone()[0]
-
-    from engine.longitudinal_memory import LongitudinalMemory
-    snap_id = LongitudinalMemory.record_snapshot(count, version_tag="v3.0_initial")
-    print(f"Initial snapshot recorded: {count} variants (snapshot #{snap_id})")
-
-    print("\nUpgrade complete. Start the server with:")
-    print("  python web_api_v3.py")
-
-
-if __name__ == "__main__":
-    migrate()
+# Step 5: Insert initial snapshot
+count = conn.execute("SELECT COUNT(*) FROM variants").fetchone()[0]
+cur = conn.execute(
+    "INSERT INTO clinvar_snapshots (record_count, version_tag) VALUES (?, ?)",
+    (count, "v3.0_initial")
+)
+conn.commit()
+conn.close()
+print(f"[5/5] Initial snapshot recorded: {count} variants (snapshot #{cur.lastrowid})")
+print("\nDone! Now run: python web_api_v3.py")

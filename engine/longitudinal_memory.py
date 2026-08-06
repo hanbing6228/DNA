@@ -162,7 +162,6 @@ class GenomeMemoryEngine:
             gene = row['gene_symbol']
             if not gene:
                 continue
-            # Import here to avoid circular dependency at module load
             try:
                 from web_api_v3 import get_drug_guidance
             except ImportError:
