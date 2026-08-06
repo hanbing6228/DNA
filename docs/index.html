@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DNA Genome Intelligence v3.0 — Demo</title>
+<title>DNA 个人基因组智能分析 v3.0</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f6f8f7;color:#1d2939;line-height:1.6}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:#f6f8f7;color:#1d2939;line-height:1.6}
 .container{max-width:1200px;margin:0 auto;padding:32px 20px}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px}
 .logo{font-size:24px;font-weight:700;color:#0f766e;display:flex;align-items:center;gap:8px}
@@ -61,7 +61,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .health-val{font-size:20px;font-weight:700;color:#0f766e;margin-top:4px}
 .health-unit{font-size:10px;color:#94a3b8}
 .graph-placeholder{height:120px;background:radial-gradient(circle,#99f6e4 2px,transparent 3px);background-size:35px 35px;border-radius:15px;margin-top:10px;position:relative;overflow:hidden}
-.graph-placeholder::after{content:'Knowledge Graph Visualization';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#0f766e;font-size:14px;font-weight:600;opacity:.6}
+.graph-placeholder::after{content:'知识图谱可视化';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#0f766e;font-size:14px;font-weight:600;opacity:.6}
 .footer{margin-top:40px;padding:20px;text-align:center;font-size:12px;color:#94a3b8}
 .page{display:none}
 .page.active{display:block}
@@ -73,298 +73,202 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .step-dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1}
 .step-dot.active{background:#0f766e}
 .step-dot.done{background:#14b8a6}
+.status-bar{padding:12px 16px;border-radius:12px;margin-bottom:20px;font-size:14px;display:none}
+.status-bar.live{background:#ecfdf3;color:#047857;border:1px solid #a7f3d0}
+.status-bar.mock{background:#fefce8;color:#a16207;border:1px solid #fde047}
 </style>
 </head>
 <body>
 <div class="container">
 <div class="header">
-  <div class="logo">🧬 Genome Intelligence</div>
+  <div class="logo">🧬 基因组智能</div>
   <div class="nav">
-    <a class="active" onclick="showPage('demo')">Demo Report</a>
-    <a onclick="showPage('upload')">Upload</a>
-    <a onclick="showPage('about')">About</a>
+    <a class="active" onclick="showPage('demo')">报告演示</a>
+    <a onclick="showPage('upload')">上传分析</a>
+    <a onclick="showPage('about')">关于</a>
   </div>
 </div>
 
-<!-- ===== DEMO REPORT PAGE ===== -->
+<!-- 状态栏：显示当前是真实数据还是演示数据 -->
+<div id="statusBar" class="status-bar"></div>
+
+<!-- ===== 报告演示页 ===== -->
 <div id="demo" class="page active">
 
-<div class="alert-banner">
-  <b>Important Finding:</b> PRSS1 variant detected with pathogenic evidence. Review recommended.
-</div>
+<div id="alertBanner"></div>
 
 <div class="grid">
 <div>
   <div class="card">
-    <h3>Your Genome</h3>
-    <div class="metric">93,525</div>
-    <div class="small">variants analyzed</div>
+    <h3>你的基因组</h3>
+    <div class="metric" id="totalVariants">--</div>
+    <div class="small">个变异已分析</div>
     <br>
-    <b>196 findings</b>
-    <p><span class="tag">17 High Priority</span></p>
-    <p class="small">Last knowledge update<br>2026-08-05</p>
+    <b id="findingCount">-- 条发现</b>
+    <p><span class="tag" id="highPriority">-- 高优先级</span></p>
+    <p class="small">知识库最后更新<br><span id="lastUpdate">--</span></p>
   </div>
 
   <div class="card">
-    <h3>Longitudinal Genome Memory</h3>
-    <div class="timeline">
+    <h3>纵向基因组记忆</h3>
+    <div class="timeline" id="timelineBox">
       <div class="timeline-item">
-        <div class="timeline-dot" style="background:#ef4444"></div>
-        <div class="timeline-date">2026-08-05 · GENOME</div>
-        <div class="timeline-title">Genome Analysis Completed</div>
-        <div class="timeline-desc">Discovered 2 ClinVar-related variants</div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot" style="background:#3b82f6"></div>
-        <div class="timeline-date">2026-08-05 · WEARABLE</div>
-        <div class="timeline-title">Apple Health: Resting Heart Rate</div>
-        <div class="timeline-desc">Resting Heart Rate = 62.0 bpm</div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot" style="background:#f97316"></div>
-        <div class="timeline-date">2026-08-05 · SYMPTOM</div>
-        <div class="timeline-title">Condition: anxiety</div>
-        <div class="timeline-desc">From personal health profile</div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-dot" style="background:#a78bfa"></div>
-        <div class="timeline-date">2026-08-05 · MILESTONE</div>
-        <div class="timeline-title">Family History: father - pancreatitis</div>
-        <div class="timeline-desc">From personal health profile</div>
+        <div class="timeline-dot" style="background:#cbd5e1"></div>
+        <div class="timeline-title">加载中...</div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <h3>Family Graph</h3>
-    <div class="family-list">
-      <div class="family-item" style="border-left-color:#ef4444">
-        <b>father</b> · PRSS1<br>
-        <span style="color:#ef4444">Risk: 50% (inherited)</span><br>
-        <small>father has 50% chance of carrying the pathogenic PRSS1 variant. Genetic testing strongly recommended.</small>
-      </div>
-      <div class="family-item" style="border-left-color:#ef4444">
-        <b>mother</b> · PRSS1<br>
-        <span style="color:#ef4444">Risk: 50% (inherited)</span><br>
-        <small>mother has 50% chance of carrying the pathogenic PRSS1 variant. Genetic testing strongly recommended.</small>
-      </div>
-      <div class="family-item" style="border-left-color:#eab308">
-        <b>sibling</b> · PRSS1<br>
-        <span style="color:#eab308">Risk: 50% (inherited)</span><br>
-        <small>sibling has 50% chance of carrying the pathogenic PRSS1 variant. Genetic testing strongly recommended.</small>
-      </div>
+    <h3>家族图谱</h3>
+    <div class="family-list" id="familyBox">
+      <p class="small">尚未添加家族成员</p>
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="healthCard" style="display:none">
     <h3>Apple Health</h3>
-    <div class="health-grid">
-      <div class="health-cell"><div class="health-name">Resting Heart Rate</div><div class="health-val">62.0</div><div class="health-unit">bpm</div></div>
-      <div class="health-cell"><div class="health-name">BMI</div><div class="health-val">22.5</div><div class="health-unit">kg/m2</div></div>
-      <div class="health-cell"><div class="health-name">Steps</div><div class="health-val">8432</div><div class="health-unit">count</div></div>
-    </div>
+    <div class="health-grid" id="healthBox"></div>
   </div>
 </div>
 
 <div>
   <div class="card">
-    <h2 style="margin:0 0 8px 0;font-size:18px">AI Medical Reasoning Engine</h2>
-    <p class="small">From raw variant to personal medical meaning</p>
-    <div class="chain">
-      <div class="node">Variant<br><b>chr7:142458823</b></div>
-      <div class="arrow">→</div>
-      <div class="node">PRSS1<br><b>p.Ala16Val</b></div>
-      <div class="arrow">→</div>
-      <div class="node" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c">Disease<br><b>Hereditary Pancreatitis</b></div>
-      <div class="arrow">→</div>
-      <div class="node" style="background:#f0fdf4;border-color:#86efac;color:#15803d">Action<br><b>Clinical Context</b></div>
+    <h2 style="margin:0 0 8px 0;font-size:18px">AI 医学推理引擎</h2>
+    <p class="small">从原始变异到个人医学意义</p>
+    <div class="chain" id="reasoningChain">
+      <div class="node">变异<br><b>加载中...</b></div>
     </div>
   </div>
 
-  <div class="card alert-banner">
-    <h3 style="margin:0 0 8px 0">Important Finding</h3>
-    <b>PRSS1 c.47C>T (p.Ala16Val)</b>
-    <p>Evidence: Pathogenic</p>
-    <p class="small">Reasoning: Variant + gene function + disease database + phenotype matching</p>
-    <p class="small">Next: review with genetic counselor if clinically relevant</p>
-  </div>
+  <div id="topFindingBox"></div>
 
   <div class="card">
-    <h3>Phenotype Matching</h3>
-    <p class="small">Input: symptoms, family history, labs</p>
-    <p class="small">AI matches possible gene-disease relationships.</p>
-    <div class="pheno-tags">
-      <span class="pheno-tag">anxiety</span>
-      <span class="pheno-tag">insomnia</span>
-      <span class="pheno-tag">father: pancreatitis</span>
+    <h3>表型匹配</h3>
+    <p class="small">输入：症状、家族史、化验结果</p>
+    <p class="small">AI 匹配可能的基因-疾病关系</p>
+    <div class="pheno-tags" id="phenoBox">
+      <span class="pheno-tag">未上传健康档案</span>
     </div>
-    <p style="margin-top:10px"><b>1 variant</b> matches your phenotype profile.</p>
+    <p style="margin-top:10px" id="phenoMatch"></p>
   </div>
 
   <div class="card">
-    <h3>Medication Intelligence</h3>
-    <p class="small">Before medication: check DPYD / CYP / VKORC1 related risks.</p>
-    <div class="med-list">
-      <div class="med-item">
-        <b>Alcohol</b> <span style="color:#c2410c">Triggers acute pancreatitis attacks</span><br>
-        <small>Strict abstinence from alcohol [Clinical Guideline]</small>
-      </div>
+    <h3>药物智能</h3>
+    <p class="small">用药前检查 DPYD / CYP / VKORC1 相关风险</p>
+    <div class="med-list" id="medBox">
+      <p class="small">未检测到药物基因组变异</p>
     </div>
   </div>
 
   <div class="card">
-    <h3>Medical Knowledge Graph</h3>
+    <h3>医学知识图谱</h3>
     <div class="graph-placeholder"></div>
-    <p class="small" style="margin-top:8px">Gene ↔ Disease ↔ Drug ↔ Phenotype network</p>
+    <p class="small" style="margin-top:8px">基因 ↔ 疾病 ↔ 药物 ↔ 表型 网络</p>
   </div>
 
   <div>
-    <h2 style="font-size:18px;margin:24px 0 12px">Detailed Findings</h2>
-
-    <div class="finding-card">
-      <div class="finding-header">
-        <div>
-          <div class="finding-title">💊 APOE</div>
-          <div class="finding-meta">Chr19:44908822 · C→T · heterozygous</div>
-        </div>
-        <div class="finding-score" style="color:#f97316">8</div>
-      </div>
-      <div class="tags">
-        <span class="tag">药物基因组学</span>
-        <span class="tag">drug_response</span>
-        <span class="tag">Autosomal Dominant</span>
-      </div>
-      <p class="finding-desc">该变异可能影响药物代谢或反应，用药前建议咨询医生。</p>
-      <div class="actions">
-        <b>Recommended Actions:</b>
-        <ul>
-          <li>携带此报告就诊时主动告知医生</li>
-          <li>开始新药物前查询药物基因组指南</li>
-          <li>避免自行调整药物剂量</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="finding-card">
-      <div class="finding-header">
-        <div>
-          <div class="finding-title">💊 APOE</div>
-          <div class="finding-meta">Chr19:44905579 · T→G · homozygous</div>
-        </div>
-        <div class="finding-score" style="color:#f97316">4</div>
-      </div>
-      <div class="tags">
-        <span class="tag">药物基因组学</span>
-        <span class="tag">drug_response</span>
-        <span class="tag">Autosomal Dominant</span>
-      </div>
-      <p class="finding-desc">该变异可能影响药物代谢或反应，用药前建议咨询医生。</p>
-      <div class="actions">
-        <b>Recommended Actions:</b>
-        <ul>
-          <li>携带此报告就诊时主动告知医生</li>
-          <li>开始新药物前查询药物基因组指南</li>
-          <li>避免自行调整药物剂量</li>
-        </ul>
-      </div>
+    <h2 style="font-size:18px;margin:24px 0 12px">详细发现</h2>
+    <div id="findingsBox">
+      <p class="small">加载中...</p>
     </div>
   </div>
 </div>
 </div>
 
 <div class="footer">
-  <p>⚠️ This report is for educational and research purposes only. It does not replace professional medical advice.</p>
-  <p>DNA Personal Genome Intelligence v3.0 · ClinVar Knowledge Graph · CPIC/PharmGKB · Longitudinal Memory · Family Graph</p>
+  <p>⚠️ 本报告仅供教育和研究用途，不能替代专业医疗建议。</p>
+  <p>DNA 个人基因组智能 v3.0 · ClinVar 知识图谱 · CPIC/PharmGKB · 纵向记忆 · 家族图谱</p>
 </div>
 </div>
 
-<!-- ===== UPLOAD PAGE ===== -->
+<!-- ===== 上传页 ===== -->
 <div id="upload" class="page">
 <div class="grid">
 <div>
   <div class="card">
-    <h3>Analysis Pipeline</h3>
-    <div class="step"><div class="step-dot done"></div><span>Upload VCF</span></div>
-    <div class="step"><div class="step-dot done"></div><span>Parse variants</span></div>
-    <div class="step"><div class="step-dot done"></div><span>Query ClinVar KG</span></div>
-    <div class="step"><div class="step-dot active"></div><span>Reasoning engine</span></div>
-    <div class="step"><div class="step-dot"></div><span>Build timeline</span></div>
-    <div class="step"><div class="step-dot"></div><span>Family risks</span></div>
-    <div class="step"><div class="step-dot"></div><span>Generate report</span></div>
+    <h3>分析流水线</h3>
+    <div class="step"><div class="step-dot"></div><span>上传 VCF</span></div>
+    <div class="step"><div class="step-dot"></div><span>解析变异</span></div>
+    <div class="step"><div class="step-dot"></div><span>查询 ClinVar 知识库</span></div>
+    <div class="step"><div class="step-dot"></div><span>推理引擎</span></div>
+    <div class="step"><div class="step-dot"></div><span>构建时间轴</span></div>
+    <div class="step"><div class="step-dot"></div><span>家族风险</span></div>
+    <div class="step"><div class="step-dot"></div><span>生成报告</span></div>
   </div>
   <div class="card">
-    <h3>Supported Inputs</h3>
-    <p class="small">VCF / VCF.gz — genome data</p>
-    <p class="small">JSON — health profile</p>
-    <p class="small">XML — Apple Health export</p>
-    <p class="small">PDF/IMG — hospital reports</p>
+    <h3>支持输入</h3>
+    <p class="small">VCF / VCF.gz — 基因组数据</p>
+    <p class="small">JSON — 健康档案</p>
+    <p class="small">XML — Apple Health 导出</p>
+    <p class="small">PDF/图片 — 医院报告</p>
   </div>
 </div>
 <div>
   <div class="card">
-    <h3>1. Genome Data <span style="color:#ef4444">*</span></h3>
+    <h3>1. 基因组数据 <span style="color:#ef4444">*</span></h3>
     <div class="dropzone">
       <div class="dz-icon">🧬</div>
-      <div class="dz-text">Click or drag to upload .vcf / .vcf.gz</div>
-      <div class="small" style="margin-top:4px">Requires Python backend. This is a static demo.</div>
+      <div class="dz-text">点击或拖拽上传 .vcf / .vcf.gz</div>
+      <div class="small" style="margin-top:4px">需要本地 Python 后端。此为静态演示。</div>
     </div>
   </div>
   <div class="card">
-    <h3>2. Health Profile <span class="tag" style="font-size:11px;padding:2px 8px">Optional</span></h3>
+    <h3>2. 健康档案 <span class="tag" style="font-size:11px;padding:2px 8px">可选</span></h3>
     <div class="dropzone">
       <div class="dz-icon">📋</div>
-      <div class="dz-text">Upload profile.json</div>
+      <div class="dz-text">上传 profile.json</div>
     </div>
   </div>
   <div class="card">
-    <h3>3. Apple Health Export <span class="tag" style="font-size:11px;padding:2px 8px">Optional</span></h3>
+    <h3>3. Apple Health 导出 <span class="tag" style="font-size:11px;padding:2px 8px">可选</span></h3>
     <div class="dropzone">
       <div class="dz-icon">❤️</div>
-      <div class="dz-text">Upload export.xml</div>
+      <div class="dz-text">上传 export.xml</div>
     </div>
   </div>
-  <button class="btn" onclick="alert('This is a static demo. Run python web_api_v3.py locally for full analysis.')">Start Genome Analysis</button>
+  <button class="btn" onclick="alert('这是静态演示页面。请在本地运行 python web_api_v3.py 进行真实分析。')">开始基因组分析</button>
 </div>
 </div>
 </div>
 
-<!-- ===== ABOUT PAGE ===== -->
+<!-- ===== 关于页 ===== -->
 <div id="about" class="page">
 <div class="card" style="max-width:800px">
-  <h2>DNA Genome Intelligence v3.0</h2>
-  <p class="small" style="margin:12px 0">A personal genome analysis platform with knowledge graph, medical reasoning engine, longitudinal memory, and family graph.</p>
-  
-  <h3 style="margin-top:24px">Architecture</h3>
+  <h2>DNA 个人基因组智能 v3.0</h2>
+  <p class="small" style="margin:12px 0">基于知识图谱、医学推理引擎、纵向记忆和家族图谱的个人基因组分析平台。</p>
+
+  <h3 style="margin-top:24px">系统架构</h3>
   <div class="chain" style="margin-top:12px">
-    <div class="node">VCF Parser</div>
+    <div class="node">VCF 解析</div>
     <div class="arrow">→</div>
-    <div class="node">Knowledge Graph</div>
+    <div class="node">知识图谱</div>
     <div class="arrow">→</div>
-    <div class="node">Reasoning Engine</div>
+    <div class="node">推理引擎</div>
     <div class="arrow">→</div>
-    <div class="node">Phenotype Match</div>
+    <div class="node">表型匹配</div>
     <div class="arrow">→</div>
-    <div class="node">Medication Intel</div>
+    <div class="node">药物智能</div>
     <div class="arrow">→</div>
-    <div class="node">Genome Memory</div>
+    <div class="node">基因组记忆</div>
     <div class="arrow">→</div>
-    <div class="node">Family Graph</div>
+    <div class="node">家族图谱</div>
   </div>
 
-  <h3 style="margin-top:24px">Tech Stack</h3>
+  <h3 style="margin-top:24px">技术栈</h3>
   <p class="small">Python 3 · Flask · SQLite · ClinVar · CPIC/PharmGKB</p>
 
   <h3 style="margin-top:24px">GitHub</h3>
   <p class="small"><a href="https://github.com/hanbing6228/DNA" style="color:#0f766e">github.com/hanbing6228/DNA</a></p>
 
-  <h3 style="margin-top:24px">Local Setup</h3>
+  <h3 style="margin-top:24px">本地部署</h3>
   <pre style="background:#f8fafc;padding:16px;border-radius:12px;font-size:12px;margin-top:8px;overflow:auto">
 git clone https://github.com/hanbing6228/DNA.git
 cd DNA
 pip install flask
 python fix_v3.py
 python web_api_v3.py
-# Open http://localhost:5001
+# 打开 http://localhost:5001
   </pre>
 </div>
 </div>
@@ -372,12 +276,259 @@ python web_api_v3.py
 </div>
 
 <script>
+// ========== 页面切换 ==========
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
   event.target.classList.add('active');
 }
+
+// ========== 数据加载 ==========
+const API_BASE = 'http://localhost:5001';
+let isLive = false;
+
+async function loadData() {
+  const statusBar = document.getElementById('statusBar');
+
+  try {
+    const res = await fetch(API_BASE + '/api/report', { method: 'GET', mode: 'cors', cache: 'no-cache' });
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    if (!data.findings || data.findings.length === 0) throw new Error('Empty data');
+
+    isLive = true;
+    statusBar.className = 'status-bar live';
+    statusBar.style.display = 'block';
+    statusBar.innerHTML = '✅ 已连接到本地后端，显示<strong>真实数据</strong>';
+    renderReport(data);
+  } catch (e) {
+    isLive = false;
+    statusBar.className = 'status-bar mock';
+    statusBar.style.display = 'block';
+    statusBar.innerHTML = '⚠️ 演示数据。启动本地服务 <code>python web_api_v3.py</code> 以查看真实报告';
+    renderMock();
+  }
+}
+
+// ========== 真实数据渲染 ==========
+function renderReport(data) {
+  const findings = data.findings || [];
+  const profile = data.profile;
+  const health = data.health_data;
+  const familyRisks = data.family_risks || [];
+  const alerts = data.new_alerts || 0;
+
+  // 概览
+  document.getElementById('totalVariants').textContent = (data.total_vcf_variants || 0).toLocaleString();
+  document.getElementById('findingCount').textContent = findings.length + ' 条发现';
+  const high = findings.filter(f => f.urgency === 'high').length;
+  document.getElementById('highPriority').textContent = high + ' 高优先级';
+  document.getElementById('lastUpdate').textContent = (data.timestamp || '').slice(0, 10) || '--';
+
+  // 警报
+  const top = findings[0];
+  const alertBox = document.getElementById('alertBanner');
+  if (alerts > 0) {
+    alertBox.innerHTML = '<div class="alert-banner"><b>重要更新：</b>检测到 ' + alerts + ' 条新警报。<a href="' + API_BASE + '/api/alerts/' + (data.sample_name||'') + '">查看警报 →</a></div>';
+  } else if (top && ['Pathogenic','Likely_pathogenic'].includes(top.clinvar_significance)) {
+    alertBox.innerHTML = '<div class="alert-banner"><b>重要发现：</b>检测到 ' + top.gene_symbol + ' 致病性变异，建议复查。</div>';
+  }
+
+  // 推理链
+  if (top) {
+    document.getElementById('reasoningChain').innerHTML =
+      '<div class="node">变异<br><b>chr' + (top.chrom||'') + ':' + (top.pos||'') + '</b></div>' +
+      '<div class="arrow">→</div>' +
+      '<div class="node">' + (top.gene_symbol||'基因') + '<br><b>' + (top.hgvs_protein||top.hgvs_coding||'') + '</b></div>' +
+      '<div class="arrow">→</div>' +
+      '<div class="node" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c">疾病<br><b>' + (top.disease_name||'遗传病') + '</b></div>' +
+      '<div class="arrow">→</div>' +
+      '<div class="node" style="background:#f0fdf4;border-color:#86efac;color:#15803d">行动<br><b>临床建议</b></div>';
+  }
+
+  // 重要发现卡片
+  if (top) {
+    document.getElementById('topFindingBox').innerHTML =
+      '<div class="card alert-banner">' +
+      '<h3 style="margin:0 0 8px 0">重要发现</h3>' +
+      '<b>' + top.gene_symbol + ' ' + (top.hgvs_coding||top.hgvs_protein||'') + '</b>' +
+      '<p>证据等级：' + top.clinvar_significance + '</p>' +
+      '<p class="small">推理：变异 + 基因功能 + 疾病数据库 + 表型匹配</p>' +
+      '<p class="small">下一步：如具有临床相关性，建议咨询遗传咨询师</p>' +
+      '</div>';
+  }
+
+  // 时间轴
+  renderTimeline(data.sample_name);
+
+  // 家族
+  if (familyRisks.length) {
+    let html = '';
+    familyRisks.forEach(r => {
+      const color = r.probability >= 0.5 ? '#ef4444' : r.probability >= 0.25 ? '#f97316' : '#eab308';
+      html += '<div class="family-item" style="border-left-color:' + color + '">' +
+        '<b>' + r.relation + '</b> · ' + r.gene_symbol + '<br>' +
+        '<span style="color:' + color + '">风险：' + (r.probability*100).toFixed(0) + '%（' + r.risk_type + '）</span><br>' +
+        '<small>' + r.recommendation + '</small></div>';
+    });
+    document.getElementById('familyBox').innerHTML = html;
+  }
+
+  // 表型
+  if (profile) {
+    let tags = '';
+    (profile.conditions || []).forEach(c => tags += '<span class="pheno-tag">' + c + '</span>');
+    (profile.family_history || []).forEach(fh => tags += '<span class="pheno-tag">' + fh.relation + '：' + fh.condition + '</span>');
+    if (tags) document.getElementById('phenoBox').innerHTML = tags;
+    const matched = findings.filter(f => f.personal_context && f.personal_context.matched_factors);
+    if (matched.length) document.getElementById('phenoMatch').innerHTML = '<b>' + matched.length + ' 条变异</b>与你的表型档案匹配。';
+  }
+
+  // 药物
+  const medGenes = findings.filter(f => f.drug_database);
+  if (medGenes.length) {
+    let html = '';
+    medGenes.slice(0, 3).forEach(f => {
+      (f.drug_database.drugs || []).slice(0, 2).forEach(d => {
+        html += '<div class="med-item"><b>' + d.drug + '</b> <span style="color:#c2410c">' + d.effect + '</span><br><small>' + d.recommendation + ' [' + d.source + ']</small></div>';
+      });
+    });
+    if (html) document.getElementById('medBox').innerHTML = html;
+  }
+
+  // Apple Health
+  if (health && !health.error && health.latest_metrics) {
+    const metrics = health.latest_metrics;
+    let html = '';
+    Object.entries(metrics).slice(0, 6).forEach(([name, m]) => {
+      html += '<div class="health-cell"><div class="health-name">' + name + '</div><div class="health-val">' + parseFloat(m.value).toFixed(1) + '</div><div class="health-unit">' + (m.unit||'') + '</div></div>';
+    });
+    if (html) {
+      document.getElementById('healthBox').innerHTML = html;
+      document.getElementById('healthCard').style.display = 'block';
+    }
+  }
+
+  // 详细发现
+  renderFindings(findings);
+}
+
+async function renderTimeline(sampleName) {
+  try {
+    const res = await fetch(API_BASE + '/api/timeline/' + (sampleName||'default'), { mode: 'cors' });
+    const data = await res.json();
+    const events = (data.events || []).slice(0, 6);
+    if (!events.length) throw new Error('empty');
+    let html = '';
+    events.forEach(e => {
+      const colorMap = {genome:'#ef4444', wearable:'#3b82f6', symptom:'#f97316', milestone:'#a78bfa', lab:'#10b981', medication:'#f59e0b', imaging:'#6366f1'};
+      const color = colorMap[e.event_type] || '#64748b';
+      html += '<div class="timeline-item"><div class="timeline-dot" style="background:' + color + '"></div>' +
+        '<div class="timeline-date">' + (e.event_date||'') + ' · ' + (e.event_type||'').toUpperCase() + '</div>' +
+        '<div class="timeline-title">' + (e.title||'') + '</div>';
+      if (e.description) html += '<div class="timeline-desc">' + e.description + '</div>';
+      html += '</div>';
+    });
+    document.getElementById('timelineBox').innerHTML = html;
+  } catch (e) {
+    // 保持默认
+  }
+}
+
+function renderFindings(findings) {
+  if (!findings.length) {
+    document.getElementById('findingsBox').innerHTML = '<p class="small">未发现相关变异</p>';
+    return;
+  }
+  let html = '';
+  findings.forEach(f => {
+    const score = f.score ? f.score.total_score : 0;
+    const urgency = f.urgency || 'none';
+    const ucolor = {high:'#ef4444', medium:'#f97316', low:'#eab308', none:'#64748b'}[urgency] || '#64748b';
+    const actions = (f.recommendations || []).map(a => '<li>' + a + '</li>').join('');
+    let drugBlock = '';
+    if (f.drug_database && f.drug_database.drugs) {
+      const drugs = f.drug_database.drugs.map(d =>
+        '<div class="drug-item"><b>' + d.drug + '</b> <span style="color:#c2410c">' + d.effect + '</span><br>' + d.recommendation + ' <span style="color:#94a3b8;font-size:11px">[' + d.source + ']</span></div>'
+      ).join('');
+      drugBlock = '<div class="drug-panel">' + drugs + '</div>';
+    }
+    html += '<div class="finding-card">' +
+      '<div class="finding-header">' +
+      '<div><div class="finding-title">' + (f.icon||'🔬') + ' ' + (f.gene_symbol||'未知基因') + '</div>' +
+      '<div class="finding-meta">Chr' + (f.chrom||'') + ':' + (f.pos||'') + ' · ' + (f.ref||'') + '→' + (f.alt||'') + ' · ' + (f.zygosity||'') + '</div></div>' +
+      '<div class="finding-score" style="color:' + ucolor + '">' + score + '</div></div>' +
+      '<div class="tags">' +
+      '<span class="tag">' + (f.category_cn||'') + '</span>' +
+      '<span class="tag">' + (f.clinvar_significance||'') + '</span>' +
+      '<span class="tag">' + ((f.inheritance||{}).pattern_name||'') + '</span></div>' +
+      '<p class="finding-desc">' + (f.description||'') + '</p>' +
+      '<div class="actions"><b>建议行动：</b><ul>' + actions + '</ul></div>' +
+      drugBlock + '</div>';
+  });
+  document.getElementById('findingsBox').innerHTML = html;
+}
+
+// ========== Mock 数据渲染 ==========
+function renderMock() {
+  document.getElementById('totalVariants').textContent = '93,525';
+  document.getElementById('findingCount').textContent = '2 条发现';
+  document.getElementById('highPriority').textContent = '0 高优先级';
+  document.getElementById('lastUpdate').textContent = '2026-08-05';
+
+  document.getElementById('alertBanner').innerHTML =
+    '<div class="alert-banner"><b>重要发现：</b>APOE 变异检测到药物反应相关证据。</div>';
+
+  document.getElementById('reasoningChain').innerHTML =
+    '<div class="node">变异<br><b>chr19:44908822</b></div><div class="arrow">→</div>' +
+    '<div class="node">APOE<br><b>rs429358</b></div><div class="arrow">→</div>' +
+    '<div class="node" style="background:#fff7ed;border-color:#fed7aa;color:#c2410c">药物反应<br><b>药物基因组学</b></div><div class="arrow">→</div>' +
+    '<div class="node" style="background:#f0fdf4;border-color:#86efac;color:#15803d">行动<br><b>咨询医生</b></div>';
+
+  document.getElementById('topFindingBox').innerHTML =
+    '<div class="card alert-banner"><h3 style="margin:0 0 8px 0">重要发现</h3>' +
+    '<b>APOE c.388T>C (Cys130Arg)</b><p>证据等级：drug_response</p>' +
+    '<p class="small">推理：变异 + 基因功能 + 疾病数据库 + 表型匹配</p>' +
+    '<p class="small">下一步：如具有临床相关性，建议咨询遗传咨询师</p></div>';
+
+  document.getElementById('timelineBox').innerHTML =
+    '<div class="timeline-item"><div class="timeline-dot" style="background:#ef4444"></div>' +
+    '<div class="timeline-date">2026-08-05 · GENOME</div><div class="timeline-title">基因组分析完成</div>' +
+    '<div class="timeline-desc">发现 2 条 ClinVar 相关变异</div></div>' +
+    '<div class="timeline-item"><div class="timeline-dot" style="background:#f97316"></div>' +
+    '<div class="timeline-date">2026-08-05 · SYMPTOM</div><div class="timeline-title">症状：anxiety</div>' +
+    '<div class="timeline-desc">来自个人健康档案</div></div>';
+
+  document.getElementById('familyBox').innerHTML = '<p class="small">尚未添加家族成员</p>';
+
+  document.getElementById('phenoBox').innerHTML =
+    '<span class="pheno-tag">anxiety</span><span class="pheno-tag">insomnia</span>';
+  document.getElementById('phenoMatch').innerHTML = '';
+
+  document.getElementById('medBox').innerHTML =
+    '<div class="med-item"><b>他汀类药物</b> <span style="color:#c2410c">疗效可能受影响</span><br>' +
+    '<small>用药前请咨询医生 [CPIC]</small></div>';
+
+  document.getElementById('findingsBox').innerHTML =
+    '<div class="finding-card"><div class="finding-header"><div><div class="finding-title">💊 APOE</div>' +
+    '<div class="finding-meta">Chr19:44908822 · C→T · heterozygous</div></div>' +
+    '<div class="finding-score" style="color:#f97316">8</div></div>' +
+    '<div class="tags"><span class="tag">药物基因组学</span><span class="tag">drug_response</span><span class="tag">常染色体显性</span></div>' +
+    '<p class="finding-desc">该变异可能影响药物代谢或反应，用药前建议咨询医生。</p>' +
+    '<div class="actions"><b>建议行动：</b><ul><li>携带此报告就诊时主动告知医生</li>' +
+    '<li>开始新药物前查询药物基因组指南</li><li>避免自行调整药物剂量</li></ul></div></div>' +
+    '<div class="finding-card"><div class="finding-header"><div><div class="finding-title">💊 APOE</div>' +
+    '<div class="finding-meta">Chr19:44905579 · T→G · homozygous</div></div>' +
+    '<div class="finding-score" style="color:#f97316">4</div></div>' +
+    '<div class="tags"><span class="tag">药物基因组学</span><span class="tag">drug_response</span><span class="tag">常染色体显性</span></div>' +
+    '<p class="finding-desc">该变异可能影响药物代谢或反应，用药前建议咨询医生。</p>' +
+    '<div class="actions"><b>建议行动：</b><ul><li>携带此报告就诊时主动告知医生</li>' +
+    '<li>开始新药物前查询药物基因组指南</li><li>避免自行调整药物剂量</li></ul></div></div>';
+}
+
+// 页面加载时自动拉数据
+loadData();
 </script>
 </body>
 </html>
