@@ -179,3 +179,19 @@ CREATE TABLE IF NOT EXISTS ancestry_markers (
 CREATE INDEX IF NOT EXISTS idx_gene_functions_gene_id ON gene_functions(gene_id);
 CREATE INDEX IF NOT EXISTS idx_variant_traits_location ON variant_traits(chromosome, position, reference, alternate);
 CREATE INDEX IF NOT EXISTS idx_ancestry_markers_location ON ancestry_markers(chromosome, position, reference, alternate);
+
+-- Cached, source-attributed responses from public APIs. Raw payloads are kept
+-- separate from clinical knowledge and expire explicitly to make refreshes
+-- reproducible and avoid repeated requests to public services.
+CREATE TABLE IF NOT EXISTS external_query_cache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_id INTEGER NOT NULL,
+    query_key TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
+    UNIQUE(source_id, query_key),
+    FOREIGN KEY (source_id) REFERENCES knowledge_sources(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_external_query_cache_expiry ON external_query_cache(expires_at);

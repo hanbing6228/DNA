@@ -21,6 +21,7 @@ from database.db import init_db, UserGenotypeRepository, get_conn
 from engine.knowledge_service import KnowledgeService
 from engine.reasoning_engine import ReasoningEngine
 from engine.genomic_context import AncestryService, GeneFunctionService
+from engine.external_sources import EnsemblClient, ExternalSourceError, GWASCatalogClient
 from engine.longitudinal_memory import LongitudinalMemory, GenomeMemoryEngine
 from engine.health_timeline import HealthTimeline
 from engine.family_graph import FamilyGraph
@@ -360,12 +361,47 @@ def get_alerts(sample_name):
 @app.route("/api/genes/<gene_symbol>/functions")
 def get_gene_functions(gene_symbol):
     """Return cited biological-function context, never a clinical conclusion."""
+    source = request.args.get("source", "local").lower()
+    if source == "ensembl":
+        try:
+            data = EnsemblClient().gene_functions(
+                gene_symbol, refresh=request.args.get("refresh", "false").lower() == "true"
+            )
+        except ExternalSourceError as error:
+            return jsonify({"error": str(error), "source": "Ensembl REST"}), 502
+        return jsonify({
+            **data,
+            "classification": "biological_function_context",
+            "disclaimer": "Function annotations describe biology; they do not diagnose disease.",
+        })
+
     functions = GeneFunctionService.get_summary(gene_symbol.upper())
     return jsonify({
         "gene_symbol": gene_symbol.upper(),
         "functions": functions,
         "classification": "biological_function_context",
         "disclaimer": "Function annotations describe biology; they do not diagnose disease.",
+    })
+
+
+@app.route("/api/research/variants/<rsid>")
+def get_research_variant_associations(rsid):
+    """Fetch and cache non-clinical GWAS associations for an rsID."""
+    try:
+        data = GWASCatalogClient().associations(
+            rsid, refresh=request.args.get("refresh", "false").lower() == "true"
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    except ExternalSourceError as error:
+        return jsonify({"error": str(error), "source": "GWAS Catalog"}), 502
+    return jsonify({
+        **data,
+        "classification": "research_association",
+        "disclaimer": (
+            "GWAS associations are population-level research results. "
+            "They are not a diagnosis, treatment recommendation, or individual prediction."
+        ),
     })
 
 @app.route("/api/alerts/<int:alert_id>/read", methods=["POST"])

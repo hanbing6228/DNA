@@ -1,6 +1,7 @@
 import sqlite3
 import tempfile
 import unittest
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -11,6 +12,7 @@ from database.db import (
     KnowledgeSourceRepository,
 )
 from engine.genomic_context import AncestryService, GeneFunctionService
+from engine.external_sources import EnsemblClient, GWASCatalogClient, JsonHttpClient
 from engine.reasoning_engine import ReasoningEngine
 from pipeline.import_clinvar import normalize_clnsig
 from pipeline.import_genomic_context import import_functions
@@ -134,6 +136,60 @@ class GenomicContextTests(unittest.TestCase):
         function = GeneFunctionService.get_summary("CFTR")[0]
         self.assertEqual(function["term_name"], "anion transport")
         self.assertEqual(function["version_tag"], "test-v1")
+
+
+class ExternalSourceTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.original_path = db.DB_PATH
+        db.DB_PATH = Path(self.directory.name) / "knowledge.db"
+        db.init_db()
+        self.calls = []
+
+    def tearDown(self):
+        db.DB_PATH = self.original_path
+        self.directory.cleanup()
+
+    def _opener(self, request, timeout):
+        self.calls.append(request.full_url)
+        if "lookup/symbol" in request.full_url:
+            return _JsonResponse({"id": "ENSG00000012048"})
+        if "xrefs/id" in request.full_url:
+            return _JsonResponse([
+                {"dbname": "GO", "primary_id": "GO:0006281", "description": "DNA repair"},
+                {"dbname": "HGNC", "primary_id": "1100", "description": "BRCA1"},
+            ])
+        return _JsonResponse({"_embedded": {"associations": [{"p_value": 1e-9, "trait": "test trait"}]}})
+
+    def test_ensembl_function_response_is_cached_with_go_terms(self):
+        client = EnsemblClient(JsonHttpClient(opener=self._opener))
+        first = client.gene_functions("brca1")
+        second = client.gene_functions("brca1")
+        self.assertFalse(first["cached"])
+        self.assertTrue(second["cached"])
+        self.assertEqual(first["payload"]["functions"][0]["term_id"], "GO:0006281")
+        self.assertEqual(len(self.calls), 2)
+
+    def test_gwas_association_response_is_cached_by_rsid(self):
+        client = GWASCatalogClient(JsonHttpClient(opener=self._opener))
+        result = client.associations("rs429358")
+        self.assertEqual(result["payload"]["rsid"], "rs429358")
+        self.assertEqual(result["payload"]["associations"][0]["trait"], "test trait")
+        self.assertEqual(client.associations("rs429358")["cached"], True)
+
+
+class _JsonResponse:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def read(self):
+        return json.dumps(self.payload).encode("utf-8")
 
 
 if __name__ == "__main__":

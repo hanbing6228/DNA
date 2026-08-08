@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sqlite3
+import json
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Optional, List, Dict
@@ -266,3 +267,33 @@ class GenomicContextRepository:
                 "alternate_allele_frequency FROM ancestry_markers"
             ).fetchall()
             return [dict(row) for row in rows]
+
+
+class ExternalQueryCacheRepository:
+    @staticmethod
+    def get(source_id: int, query_key: str) -> Optional[Dict]:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT payload_json, fetched_at, expires_at FROM external_query_cache "
+                "WHERE source_id = ? AND query_key = ? "
+                "AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)",
+                (source_id, query_key),
+            ).fetchone()
+            if not row:
+                return None
+            return {
+                "payload": json.loads(row["payload_json"]),
+                "fetched_at": row["fetched_at"],
+                "expires_at": row["expires_at"],
+                "cached": True,
+            }
+
+    @staticmethod
+    def save(source_id: int, query_key: str, payload: Dict, expires_at: str) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO external_query_cache "
+                "(source_id, query_key, payload_json, expires_at) VALUES (?, ?, ?, ?)",
+                (source_id, query_key, json.dumps(payload, ensure_ascii=False), expires_at),
+            )
+            conn.commit()
