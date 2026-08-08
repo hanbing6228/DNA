@@ -119,10 +119,11 @@ def migrate():
         shutil.copy(DB_PATH, backup)
         print(f"Backed up old database: {backup}")
 
-    # 2. Apply v3 schema directly (embedded, no file read)
+    # 2. Apply the canonical v3 schema.  Keeping this in one file prevents
+    # future schema changes from drifting from the application startup path.
     print("Applying v3.0 schema...")
     conn = sqlite3.connect(str(DB_PATH))
-    conn.executescript(V3_SCHEMA)
+    conn.executescript((BASE / "database" / "schema_v3.sql").read_text(encoding="utf-8"))
     conn.commit()
 
     # Verify tables were created

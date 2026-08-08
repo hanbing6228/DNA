@@ -6,21 +6,20 @@ from typing import Optional, List, Dict
 
 DB_PATH = Path(__file__).parent / "dna_knowledge.db"
 SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+V3_SCHEMA_PATH = Path(__file__).parent / "schema_v3.sql"
 
 def init_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
-    schema = SCHEMA_PATH.read_text(encoding="utf-8")
-    for stmt in schema.split(";"):
-        stmt = stmt.strip()
-        if stmt:
-            try:
-                conn.execute(stmt)
-            except sqlite3.OperationalError as e:
-                if "already exists" not in str(e):
-                    print("Warning:", e)
-    conn.commit()
-    conn.close()
+    try:
+        # Both schemas are idempotent.  Keeping the v3 tables here prevents
+        # callers other than the Flask app (for example the ClinVar importer)
+        # from creating an incomplete database.
+        conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+        conn.executescript(V3_SCHEMA_PATH.read_text(encoding="utf-8"))
+        conn.commit()
+    finally:
+        conn.close()
     print("Database initialized:", DB_PATH)
 
 @contextmanager
@@ -117,7 +116,8 @@ class VariantRepository:
         with get_conn() as conn:
             rows = conn.execute(
                 "SELECT v.* FROM variants v JOIN genes g ON v.gene_id = g.id "
-                "WHERE g.symbol = ? AND v.clinvar_significance IN ('Pathogenic', 'Likely_pathogenic')",
+                "WHERE g.symbol = ? AND v.clinvar_significance IN "
+                "('Pathogenic', 'Likely_pathogenic', 'Pathogenic/Likely_pathogenic')",
                 (gene_symbol,)
             ).fetchall()
             return [dict(r) for r in rows]
@@ -174,7 +174,8 @@ class UserGenotypeRepository:
             rows = conn.execute(
                 "SELECT v.*, g.symbol as gene_symbol, ug.genotype, ug.zygosity FROM user_genotypes ug "
                 "JOIN variants v ON ug.variant_id = v.id LEFT JOIN genes g ON v.gene_id = g.id "
-                "WHERE ug.sample_name = ? AND v.clinvar_significance IN ('Pathogenic', 'Likely_pathogenic', 'drug_response')",
+                "WHERE ug.sample_name = ? AND v.clinvar_significance IN "
+                "('Pathogenic', 'Likely_pathogenic', 'Pathogenic/Likely_pathogenic', 'drug_response')",
                 (sample,)
             ).fetchall()
             return [dict(r) for r in rows]

@@ -263,11 +263,14 @@ class ReasoningEngine:
 
     @staticmethod
     def _genotype_to_zygosity(gt: str) -> str:
-        if gt in ('0/1', '0|1', '1/0', '1|1'):
+        # VCF genotype fields can include FORMAT subfields (for example
+        # "0/1:42:99").  Only the GT component determines zygosity.
+        gt = (gt or '').split(':', 1)[0]
+        if gt in ('0/1', '0|1', '1/0', '1|0'):
             return 'heterozygous'
         if gt in ('1/1', '1|1'):
             return 'homozygous'
-        if gt in ('1', '0') or gt == './1':
+        if gt in ('1', './1', '.|1'):
             return 'hemizygous'
         return 'unknown'
 
