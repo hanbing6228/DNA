@@ -7,6 +7,7 @@ Usage: python import_clinvar.py <clinvar.vcf.gz> [max_records]
 import gzip
 import sys
 import re
+from urllib.parse import unquote
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -25,9 +26,48 @@ def parse_geneinfo(info: str) -> list:
     return genes
 
 
+CLNSIG_PRIORITY = (
+    'Pathogenic',
+    'Likely_pathogenic',
+    'Conflicting_interpretations_of_pathogenicity',
+    'Uncertain_significance',
+    'drug_response',
+    'risk_factor',
+    'protective',
+    'Likely_benign',
+    'Benign',
+    'not_provided',
+    'other',
+)
+
+
+def normalize_clnsig(raw: str) -> str:
+    """Map ClinVar's multi-valued CLNSIG field to one safe, queryable value.
+
+    The original VCF INFO is retained in ``raw_info``.  A record with
+    conflicting interpretations is never promoted to pathogenic simply
+    because one submitter supplied a pathogenic label.
+    """
+    if not raw:
+        return None
+
+    decoded = unquote(raw).replace(' ', '_')
+    labels = {
+        label
+        for label in re.split(r'[|,/]', decoded)
+        if label
+    }
+    if 'Conflicting_interpretations_of_pathogenicity' in labels:
+        return 'Conflicting_interpretations_of_pathogenicity'
+    for label in CLNSIG_PRIORITY:
+        if label in labels:
+            return label
+    return decoded
+
+
 def parse_clnsig(info: str) -> str:
     match = re.search(r'CLNSIG=([^;]+)', info)
-    return match.group(1) if match else None
+    return normalize_clnsig(match.group(1)) if match else None
 
 
 def parse_clnrevstat(info: str) -> str:

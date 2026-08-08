@@ -20,6 +20,8 @@ sys.path.insert(0, str(BASE))
 from database.db import init_db, UserGenotypeRepository, get_conn
 from engine.knowledge_service import KnowledgeService
 from engine.reasoning_engine import ReasoningEngine
+from engine.genomic_context import AncestryService, GeneFunctionService
+from engine.external_sources import EnsemblClient, ExternalSourceError, GWASCatalogClient
 from engine.longitudinal_memory import LongitudinalMemory, GenomeMemoryEngine
 from engine.health_timeline import HealthTimeline
 from engine.family_graph import FamilyGraph
@@ -286,6 +288,7 @@ def analyze_api():
     total = len(raw_variants)
     findings = []
     sample_name = secure_filename(vcf.filename).split('.')[0]
+    ancestry = AncestryService.analyze(raw_variants)
 
     for v in raw_variants:
         kg_variant = KnowledgeService.get_variant(v['chrom'], v['pos'], v['ref'], v['alt'])
@@ -296,6 +299,7 @@ def analyze_api():
 
         gene = finding.get('gene_symbol', '')
         if gene:
+            finding['gene_functions'] = GeneFunctionService.get_summary(gene)
             drug_info = get_drug_guidance(gene)
             if drug_info:
                 finding['drug_database'] = drug_info
@@ -325,6 +329,7 @@ def analyze_api():
         "total_vcf_variants": total,
         "reported": len(findings),
         "findings": findings,
+        "ancestry": ancestry,
         "profile": profile,
         "health_data": health_data,
         "hospital_files": hospital_files,
@@ -351,6 +356,53 @@ def get_alerts(sample_name):
     unread_only = request.args.get('unread', 'false').lower() == 'true'
     alerts = LongitudinalMemory.get_alerts(sample_name, unread_only)
     return jsonify({"alerts": alerts, "count": len(alerts)})
+
+
+@app.route("/api/genes/<gene_symbol>/functions")
+def get_gene_functions(gene_symbol):
+    """Return cited biological-function context, never a clinical conclusion."""
+    source = request.args.get("source", "local").lower()
+    if source == "ensembl":
+        try:
+            data = EnsemblClient().gene_functions(
+                gene_symbol, refresh=request.args.get("refresh", "false").lower() == "true"
+            )
+        except ExternalSourceError as error:
+            return jsonify({"error": str(error), "source": "Ensembl REST"}), 502
+        return jsonify({
+            **data,
+            "classification": "biological_function_context",
+            "disclaimer": "Function annotations describe biology; they do not diagnose disease.",
+        })
+
+    functions = GeneFunctionService.get_summary(gene_symbol.upper())
+    return jsonify({
+        "gene_symbol": gene_symbol.upper(),
+        "functions": functions,
+        "classification": "biological_function_context",
+        "disclaimer": "Function annotations describe biology; they do not diagnose disease.",
+    })
+
+
+@app.route("/api/research/variants/<rsid>")
+def get_research_variant_associations(rsid):
+    """Fetch and cache non-clinical GWAS associations for an rsID."""
+    try:
+        data = GWASCatalogClient().associations(
+            rsid, refresh=request.args.get("refresh", "false").lower() == "true"
+        )
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    except ExternalSourceError as error:
+        return jsonify({"error": str(error), "source": "GWAS Catalog"}), 502
+    return jsonify({
+        **data,
+        "classification": "research_association",
+        "disclaimer": (
+            "GWAS associations are population-level research results. "
+            "They are not a diagnosis, treatment recommendation, or individual prediction."
+        ),
+    })
 
 @app.route("/api/alerts/<int:alert_id>/read", methods=["POST"])
 def mark_alert_read(alert_id):

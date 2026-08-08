@@ -109,3 +109,89 @@ CREATE TABLE IF NOT EXISTS lab_results (
     source_file TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Provenance for every non-user knowledge source.  A result is only
+-- interpretable when its source release and intended use are available.
+CREATE TABLE IF NOT EXISTS knowledge_sources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_key TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    version_tag TEXT,
+    release_date TEXT,
+    source_url TEXT,
+    license TEXT,
+    imported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Gene-function annotations from controlled resources such as Gene Ontology.
+CREATE TABLE IF NOT EXISTS gene_functions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    gene_id INTEGER NOT NULL,
+    source_id INTEGER NOT NULL,
+    aspect TEXT,
+    term_id TEXT,
+    term_name TEXT NOT NULL,
+    evidence_code TEXT,
+    description TEXT,
+    UNIQUE(gene_id, source_id, term_id, aspect),
+    FOREIGN KEY (gene_id) REFERENCES genes(id),
+    FOREIGN KEY (source_id) REFERENCES knowledge_sources(id)
+);
+
+-- Research associations are intentionally separate from clinical assertions.
+CREATE TABLE IF NOT EXISTS variant_traits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chromosome TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    reference TEXT NOT NULL,
+    alternate TEXT NOT NULL,
+    rsid TEXT,
+    trait_name TEXT NOT NULL,
+    trait_category TEXT,
+    effect_allele TEXT,
+    effect_size REAL,
+    effect_unit TEXT,
+    p_value REAL,
+    population TEXT,
+    evidence_level TEXT NOT NULL DEFAULT 'research',
+    limitations TEXT,
+    source_id INTEGER NOT NULL,
+    UNIQUE(chromosome, position, reference, alternate, trait_name, source_id),
+    FOREIGN KEY (source_id) REFERENCES knowledge_sources(id)
+);
+
+-- Allele frequencies in explicitly named reference populations. These power
+-- ancestry similarity estimates; they are not medical findings.
+CREATE TABLE IF NOT EXISTS ancestry_markers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chromosome TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    reference TEXT NOT NULL,
+    alternate TEXT NOT NULL,
+    population_code TEXT NOT NULL,
+    alternate_allele_frequency REAL NOT NULL CHECK(alternate_allele_frequency >= 0 AND alternate_allele_frequency <= 1),
+    source_id INTEGER NOT NULL,
+    UNIQUE(chromosome, position, reference, alternate, population_code, source_id),
+    FOREIGN KEY (source_id) REFERENCES knowledge_sources(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_gene_functions_gene_id ON gene_functions(gene_id);
+CREATE INDEX IF NOT EXISTS idx_variant_traits_location ON variant_traits(chromosome, position, reference, alternate);
+CREATE INDEX IF NOT EXISTS idx_ancestry_markers_location ON ancestry_markers(chromosome, position, reference, alternate);
+
+-- Cached, source-attributed responses from public APIs. Raw payloads are kept
+-- separate from clinical knowledge and expire explicitly to make refreshes
+-- reproducible and avoid repeated requests to public services.
+CREATE TABLE IF NOT EXISTS external_query_cache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_id INTEGER NOT NULL,
+    query_key TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
+    UNIQUE(source_id, query_key),
+    FOREIGN KEY (source_id) REFERENCES knowledge_sources(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_external_query_cache_expiry ON external_query_cache(expires_at);
