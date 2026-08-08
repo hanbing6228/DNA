@@ -20,6 +20,7 @@ sys.path.insert(0, str(BASE))
 from database.db import init_db, UserGenotypeRepository, get_conn
 from engine.knowledge_service import KnowledgeService
 from engine.reasoning_engine import ReasoningEngine
+from engine.genomic_context import AncestryService, GeneFunctionService
 from engine.longitudinal_memory import LongitudinalMemory, GenomeMemoryEngine
 from engine.health_timeline import HealthTimeline
 from engine.family_graph import FamilyGraph
@@ -286,6 +287,7 @@ def analyze_api():
     total = len(raw_variants)
     findings = []
     sample_name = secure_filename(vcf.filename).split('.')[0]
+    ancestry = AncestryService.analyze(raw_variants)
 
     for v in raw_variants:
         kg_variant = KnowledgeService.get_variant(v['chrom'], v['pos'], v['ref'], v['alt'])
@@ -296,6 +298,7 @@ def analyze_api():
 
         gene = finding.get('gene_symbol', '')
         if gene:
+            finding['gene_functions'] = GeneFunctionService.get_summary(gene)
             drug_info = get_drug_guidance(gene)
             if drug_info:
                 finding['drug_database'] = drug_info
@@ -325,6 +328,7 @@ def analyze_api():
         "total_vcf_variants": total,
         "reported": len(findings),
         "findings": findings,
+        "ancestry": ancestry,
         "profile": profile,
         "health_data": health_data,
         "hospital_files": hospital_files,
@@ -351,6 +355,18 @@ def get_alerts(sample_name):
     unread_only = request.args.get('unread', 'false').lower() == 'true'
     alerts = LongitudinalMemory.get_alerts(sample_name, unread_only)
     return jsonify({"alerts": alerts, "count": len(alerts)})
+
+
+@app.route("/api/genes/<gene_symbol>/functions")
+def get_gene_functions(gene_symbol):
+    """Return cited biological-function context, never a clinical conclusion."""
+    functions = GeneFunctionService.get_summary(gene_symbol.upper())
+    return jsonify({
+        "gene_symbol": gene_symbol.upper(),
+        "functions": functions,
+        "classification": "biological_function_context",
+        "disclaimer": "Function annotations describe biology; they do not diagnose disease.",
+    })
 
 @app.route("/api/alerts/<int:alert_id>/read", methods=["POST"])
 def mark_alert_read(alert_id):

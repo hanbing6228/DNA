@@ -4,6 +4,12 @@ import unittest
 from pathlib import Path
 
 from database import db
+from database.db import (
+    GeneRepository,
+    GenomicContextRepository,
+    KnowledgeSourceRepository,
+)
+from engine.genomic_context import AncestryService, GeneFunctionService
 from engine.reasoning_engine import ReasoningEngine
 from pipeline.import_clinvar import normalize_clnsig
 from pipeline.validate_knowledge_base import REQUIRED_TABLES, validate
@@ -65,6 +71,46 @@ class DatabaseInitializationTests(unittest.TestCase):
                     "SELECT name FROM sqlite_master WHERE type = 'table'"
                 )
             }
+
+
+class GenomicContextTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.original_path = db.DB_PATH
+        db.DB_PATH = Path(self.directory.name) / "knowledge.db"
+        db.init_db()
+
+    def tearDown(self):
+        db.DB_PATH = self.original_path
+        self.directory.cleanup()
+
+    def test_gene_functions_remain_attributed_to_their_source(self):
+        source_id = KnowledgeSourceRepository.upsert(
+            "go-2026-01", "Gene Ontology", "gene_function",
+            version_tag="2026-01", source_url="https://geneontology.org", license="CC BY 4.0",
+        )
+        gene_id = GeneRepository.upsert("BRCA1")
+        GenomicContextRepository.add_gene_function(
+            gene_id, source_id, "DNA repair", term_id="GO:0006281", aspect="biological_process",
+        )
+        function = GeneFunctionService.get_summary("BRCA1")[0]
+        self.assertEqual(function["term_id"], "GO:0006281")
+        self.assertEqual(function["source"], "Gene Ontology")
+
+    def test_ancestry_estimate_is_marked_exploratory_for_small_panel(self):
+        source_id = KnowledgeSourceRepository.upsert("panel-v1", "Test panel", "ancestry_reference")
+        for population, frequency in (("POP_A", 0.8), ("POP_B", 0.2)):
+            GenomicContextRepository.add_ancestry_marker({
+                "chromosome": "1", "position": 100, "reference": "A", "alternate": "G",
+                "population_code": population, "alternate_allele_frequency": frequency,
+                "source_id": source_id,
+            })
+        result = AncestryService.analyze([
+            {"chrom": "1", "pos": 100, "ref": "A", "alt": "G", "genotype": "1/1"}
+        ])
+        self.assertEqual(result["status"], "exploratory")
+        self.assertEqual(result["matched_loci"], 1)
+        self.assertEqual(result["results"][0]["reference_population"], "POP_A")
 
 
 if __name__ == "__main__":

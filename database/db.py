@@ -179,3 +179,90 @@ class UserGenotypeRepository:
                 (sample,)
             ).fetchall()
             return [dict(r) for r in rows]
+
+
+class KnowledgeSourceRepository:
+    @staticmethod
+    def upsert(source_key: str, display_name: str, category: str, **kwargs) -> int:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT id FROM knowledge_sources WHERE source_key = ?",
+                (source_key,),
+            ).fetchone()
+            if row:
+                if kwargs:
+                    fields = ", ".join(f"{field}=?" for field in kwargs)
+                    conn.execute(
+                        f"UPDATE knowledge_sources SET display_name=?, category=?, {fields} WHERE id=?",
+                        (display_name, category, *kwargs.values(), row["id"]),
+                    )
+                    conn.commit()
+                return row["id"]
+            columns = ["source_key", "display_name", "category", *kwargs.keys()]
+            values = [source_key, display_name, category, *kwargs.values()]
+            placeholders = ", ".join("?" for _ in columns)
+            conn.execute(
+                f"INSERT INTO knowledge_sources ({', '.join(columns)}) VALUES ({placeholders})",
+                values,
+            )
+            conn.commit()
+            return conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+
+class GenomicContextRepository:
+    @staticmethod
+    def add_gene_function(gene_id: int, source_id: int, term_name: str, **kwargs) -> None:
+        columns = ["gene_id", "source_id", "term_name", *kwargs.keys()]
+        values = [gene_id, source_id, term_name, *kwargs.values()]
+        placeholders = ", ".join("?" for _ in columns)
+        with get_conn() as conn:
+            conn.execute(
+                f"INSERT OR REPLACE INTO gene_functions ({', '.join(columns)}) VALUES ({placeholders})",
+                values,
+            )
+            conn.commit()
+
+    @staticmethod
+    def get_gene_functions(symbol: str) -> List[Dict]:
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT gf.aspect, gf.term_id, gf.term_name, gf.evidence_code, gf.description, "
+                "ks.display_name AS source, ks.version_tag, ks.source_url "
+                "FROM gene_functions gf "
+                "JOIN genes g ON g.id = gf.gene_id "
+                "JOIN knowledge_sources ks ON ks.id = gf.source_id "
+                "WHERE g.symbol = ? ORDER BY gf.term_name",
+                (symbol,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    @staticmethod
+    def add_trait_association(record: Dict) -> None:
+        columns = list(record.keys())
+        placeholders = ", ".join("?" for _ in columns)
+        with get_conn() as conn:
+            conn.execute(
+                f"INSERT OR REPLACE INTO variant_traits ({', '.join(columns)}) VALUES ({placeholders})",
+                [record[column] for column in columns],
+            )
+            conn.commit()
+
+    @staticmethod
+    def add_ancestry_marker(record: Dict) -> None:
+        columns = list(record.keys())
+        placeholders = ", ".join("?" for _ in columns)
+        with get_conn() as conn:
+            conn.execute(
+                f"INSERT OR REPLACE INTO ancestry_markers ({', '.join(columns)}) VALUES ({placeholders})",
+                [record[column] for column in columns],
+            )
+            conn.commit()
+
+    @staticmethod
+    def get_ancestry_markers() -> List[Dict]:
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT chromosome, position, reference, alternate, population_code, "
+                "alternate_allele_frequency FROM ancestry_markers"
+            ).fetchall()
+            return [dict(row) for row in rows]

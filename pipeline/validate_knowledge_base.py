@@ -16,6 +16,7 @@ REQUIRED_TABLES = {
     "genes", "variants", "diseases", "variant_disease", "user_genotypes",
     "clinvar_snapshots", "variant_history", "user_alerts", "timeline_events",
     "family_members", "family_risks", "user_medications", "lab_results",
+    "knowledge_sources", "gene_functions", "variant_traits", "ancestry_markers",
 }
 PATHOGENIC_LABELS = (
     "Pathogenic", "Likely_pathogenic", "Pathogenic/Likely_pathogenic",
