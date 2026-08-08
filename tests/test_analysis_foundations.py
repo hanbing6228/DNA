@@ -2,6 +2,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from database import db
 from database.db import (
@@ -12,6 +13,7 @@ from database.db import (
 from engine.genomic_context import AncestryService, GeneFunctionService
 from engine.reasoning_engine import ReasoningEngine
 from pipeline.import_clinvar import normalize_clnsig
+from pipeline.import_genomic_context import import_functions
 from pipeline.validate_knowledge_base import REQUIRED_TABLES, validate
 
 
@@ -111,6 +113,27 @@ class GenomicContextTests(unittest.TestCase):
         self.assertEqual(result["status"], "exploratory")
         self.assertEqual(result["matched_loci"], 1)
         self.assertEqual(result["results"][0]["reference_population"], "POP_A")
+
+    def test_function_import_requires_and_preserves_source_metadata(self):
+        input_path = Path(self.directory.name) / "functions.tsv"
+        input_path.write_text(
+            "gene_symbol\tterm_id\tterm_name\taspect\tevidence_code\tdescription\n"
+            "CFTR\tGO:0006820\tanion transport\tbiological_process\tIDA\tExample annotation\n",
+            encoding="utf-8",
+        )
+        args = SimpleNamespace(
+            input=input_path,
+            delimiter="\t",
+            source_key="go-test-v1",
+            source_name="Gene Ontology",
+            version="test-v1",
+            source_url="https://geneontology.org",
+            license="CC BY 4.0",
+        )
+        self.assertEqual(import_functions(args), 1)
+        function = GeneFunctionService.get_summary("CFTR")[0]
+        self.assertEqual(function["term_name"], "anion transport")
+        self.assertEqual(function["version_tag"], "test-v1")
 
 
 if __name__ == "__main__":
